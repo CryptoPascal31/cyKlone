@@ -1,0 +1,6 @@
+[submodule "pact/pact-zk-hashes"]
+	path = pact/pact-zk-hashes
+	url = git@github.com:CryptoPascal31/pact-zk-hashes.git
+[submodule "pact/kadena_repl_sandbox"]
+	path = pact/kadena_repl_sandbox
+	url = git@github.com:CryptoPascal31/kadena_repl_sandbox.git
