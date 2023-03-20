@@ -1,0 +1,15 @@
+import "./commitment_hasher" as com_hasher;
+import "./nullifier_hasher" as nul_hasher;
+from "./merkle_tree" import compute_merkle_root;
+
+
+const u32 TREE_LEVELS = 18;
+
+def main(public field account_hash, private field secret, private field nullifier, private field[TREE_LEVELS] path, private u32 indices) -> field[2] {
+
+  field commitment = com_hasher(secret, nullifier);
+  field nullifier_hash = nul_hasher(nullifier);
+  assert(account_hash == account_hash);
+
+  return [nullifier_hash, compute_merkle_root(commitment, path, indices)];
+}

@@ -1,0 +1,25 @@
+import "hashes/poseidon/poseidon" as poseidon;
+import "utils/casts/u32_to_bits";
+
+
+def hash_level(field l, field r, bool direction) -> field {
+  field[2] inputs = direction ? [r,l] : [l,r];
+  return poseidon(inputs);
+}
+
+def unpack_indices<N>(u32 input) -> bool[N] {
+  bool[32] b_input = u32_to_bits(input);
+  return b_input[0..N];
+}
+
+def compute_merkle_root<N>(field leaf, field[N] path, u32 indices) -> field {
+  bool[N] b_indices = unpack_indices(indices);
+
+  field mut current = leaf;
+
+  for u32 i in 0..N {
+    current = hash_level(current, path[i], b_indices[i]);
+  }
+
+  return current;
+}

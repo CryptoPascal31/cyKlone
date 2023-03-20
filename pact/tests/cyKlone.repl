@@ -1,0 +1,113 @@
+(load "../kadena_repl_sandbox/kda-env/init.repl")
+
+(begin-tx)
+(namespace 'free)
+(load "../pact-zk-hashes/pact/contracts/poseidon-constants.pact")
+(load "../pact-zk-hashes/pact/contracts/poseidon.pact")
+(commit-tx)
+
+(begin-tx)
+(namespace 'free)
+(load "../contracts/cyclone-withdraw-verifier-v0.pact")
+(load "../contracts/cyklone.pact")
+(create-table global-state)
+(create-table nullifiers)
+(create-table deposits)
+(init)
+(coin.create-account WORK-GAS-STATION basic-guards.GUARD_SUCCESS)
+(commit-tx)
+
+(env-gasmodel "table")
+(env-gaslimit 1000000000000)
+
+(begin-tx)
+(use free.cyKlone-v0-10)
+; Mnemonic: human bargain engage flock unique bring board buffalo taste auction comic area
+; Commitment: HeEGL8v_r6LY_GAgyt92WOyM_ETivNDcBMckxEO05W0
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 1000.0)]}])
+(deposit "alice" "HeEGL8v_r6LY_GAgyt92WOyM_ETivNDcBMckxEO05W0")
+(commit-tx)
+
+
+(begin-tx)
+(use free.cyKlone-v0-10)
+; Mnemonic: sand tone excite wire about age focus easily fossil person income habit
+; Commitment: F7YrjTInreRID-_59JyBT6a2FPFXuqZlozI_o7D7uDY
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 1000.0)]}])
+(deposit "alice" "F7YrjTInreRID-_59JyBT6a2FPFXuqZlozI_o7D7uDY")
+(commit-tx)
+
+
+(begin-tx)
+(use free.cyKlone-v0-10)
+; Mnemonic: unique turn medal ozone power change ghost pudding sauce drastic code fat
+; Commitment: KGPytNCSi1JSWJdlXqdOVrAv4fTe-hAa5PGNmXmatrU
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 1000.0)]}])
+(deposit "alice" "KGPytNCSi1JSWJdlXqdOVrAv4fTe-hAa5PGNmXmatrU")
+(commit-tx)
+
+(begin-tx)
+(use free.cyKlone-v0-10)
+; Mnemonic: curious become promote social concert tourist entire hole clever water kit person
+; Commitment: BQyIswNTD5OaMAbIqF5JhYw8gGgY5YfB363A8_zuzts
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 1000.0)]}])
+(deposit "alice" "BQyIswNTD5OaMAbIqF5JhYw8gGgY5YfB363A8_zuzts")
+(commit-tx)
+
+(begin-tx)
+(use free.cyKlone-v0-10)
+; Mnemonic: genius capable typical gadget sunny twin side disease green frequent elder noble
+; Commitment: IcYmCvv-1cVienWyjD9UpHBzi5yrWlmmC3QMWR6VqE4
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 1000.0)]}])
+(deposit "alice" "IcYmCvv-1cVienWyjD9UpHBzi5yrWlmmC3QMWR6VqE4")
+(commit-tx)
+
+
+
+(begin-tx)
+(use free.cyKlone-v0-10)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(work)
+(commit-tx)
+
+
+(begin-tx)
+(use free.cyKlone-v0-10)
+(print (has-work))
+(print (get-state))
+(print (get-deposits-range 0 10))
+(commit-tx)
+
+(begin-tx)
+(use free.cyKlone-v0-10)
+(env-gas 0)
+(withdraw "bob"  "J9ZU88lqePinTaXZFm0sP020O3S67GJj21yVFiSgP10" "BanKWum1N0IdsuMGHga3fIplSdZsnMYXI4ZTaJwQqXo" "H3cNs6RtDAzrJbbWzo2Awb39_aL3h60qKOubV3CdZuAL6Rs00zNIU3twZaqgn8GUdHREXaQ9g3RBylgYNdMjAoJAYWR3gfgxqRnriuf3ua8lptxgF573aewv588mt5G4wE3gucYDcKx1l3t4J2zNLOmSbT9ZtJcmHm0kcN4TyjrMDo-HoKjgbw91KvpDvN_m4DFfmfZJH6ZNSZ5F3vNDBeoLEIyc1hO5NQkbQAo6uhNUK_uwpNHAGeQYurCn0xVVZoJBOO0c937FnQyH7NIBbDRVOtR-E1_El0CTFXH10Fz2oGRRGFa6qyjzg2SbTsEC4N50wuEHNaEV6KnbqsrTm3Ew")
+(print (env-gas))

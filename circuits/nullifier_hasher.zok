@@ -1,0 +1,12 @@
+import "hashes/pedersen/512bitBool" as pedersen_hash;
+import "utils/pack/bool/unpack256" as unpacker;
+import "utils/pack/bool/pack256" as packer;
+
+
+def main(field nullifier) -> field {
+  bool[256] nullifier_bits = unpacker(nullifier);
+  bool[256] zeros = [false;256];
+  bool[512] pedersen_input = [...nullifier_bits ,...zeros];
+  bool[256] hash = pedersen_hash(pedersen_input);
+  return packer(hash);
+}

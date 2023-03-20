@@ -1,0 +1,39 @@
+;Simple script to generate zeros for the Merkle Tree for the cyKlone contract.
+
+; An empty leaf (no deposit) is defined by
+;
+;  Z0 = modulo (BLAKE2S("cyKone"), P)
+;       where P is the prime number generating G1 for the BN254
+;
+; Hence the zeros of an empty node of the Merkle Tree is
+;
+;  Zn = POSEIDON (Zn-1, Zn-1)
+;
+;
+(load "../kadena_repl_sandbox/kda-env/init.repl")
+
+(begin-tx)
+(load "../pact-zk-hashes/pact/contracts/poseidon-constants.pact")
+(load "../pact-zk-hashes/pact/contracts/poseidon.pact")
+(commit-tx)
+
+(module GENERATOR G
+  (defcap G() true)
+  (use poseidon-hash-v1)
+
+  (defconst EMPTY_LEAF_STR:string "cyKlone")
+
+  (defconst EMPTY_LEAF (mod (str-to-int 64 (hash EMPTY_LEAF_STR)) FIELD-MODULUS))
+
+  (defun do-hash:integer (x:integer _:integer)
+    (poseidon-hash (make-list 2 x)))
+
+  (defun zero-level-n (level:integer)
+    (if (= 0 level)
+        EMPTY_LEAF
+        (fold (do-hash) EMPTY_LEAF (enumerate 1 level)))
+  )
+)
+
+(print (format "Empty Leaf:{}" [EMPTY_LEAF]))
+(print (format "Zeros:{}" [(map (zero-level-n) (enumerate 0 17))]))
