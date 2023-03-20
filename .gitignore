@@ -1,3 +1,4 @@
 client/node_modules/*
 .pact-history
 .pact_zk_state
+circuits/*.out
