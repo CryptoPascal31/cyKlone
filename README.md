@@ -1,4 +1,7 @@
 # cyKlone
+
+**Work in progress**
+
 This project aims to create an anonymity contract for Kadena, using the new Zero Knowledge features of Pact 4.6.
 
 This work is based on Tornado Cash, with following specificities:
