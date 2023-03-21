@@ -5,7 +5,7 @@
 
   (defcap GOVERNANCE ()
     ;The default behaviour is to create non-upgradable module but this can be changed here
-    (enforce false "Non upgradable module"))
+    (enforce-keyset "free.cyKlone-test-ks"))
 
   (defconst V-KEY:object{groth16-verify-key} {
      "alpha": {

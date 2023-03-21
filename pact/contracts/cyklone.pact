@@ -7,7 +7,7 @@
   (use free.poseidon-hash-v1 [poseidon-hash])
   (use cyclone-withdraw-verifier-v0 [verify])
 
-  (defcap GOVERNANCE () true)
+  (defcap GOVERNANCE () (enforce-keyset "free.cyKlone-test-ks"))
 
   (defconst MERKLE-TREE-DEPTH:integer 18)
 
