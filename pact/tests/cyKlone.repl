@@ -8,7 +8,16 @@
 
 (begin-tx)
 (namespace 'free)
-(load "../contracts/cyclone-withdraw-verifier-v0.pact")
+(env-data {'ks:["governance-key"]})
+(env-keys ["governance-key"] )
+(define-keyset "free.cyKlone-test-ks" (read-keyset 'ks))
+(commit-tx)
+
+
+(begin-tx)
+(env-keys ["governance-key"] )
+(namespace 'free)
+(load "../contracts/cyklone-withdraw-verifier-v0.pact")
 (load "../contracts/cyklone.pact")
 (create-table global-state)
 (create-table nullifiers)

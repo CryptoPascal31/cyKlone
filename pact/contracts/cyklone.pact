@@ -5,7 +5,7 @@
   (use free.util-zk [BN128-GROUP-MODULUS])
 
   (use free.poseidon-hash-v1 [poseidon-hash])
-  (use cyclone-withdraw-verifier-v0 [verify])
+  (use cyklone-withdraw-verifier-v0 [verify])
 
   (defcap GOVERNANCE () (enforce-keyset "free.cyKlone-test-ks"))
 

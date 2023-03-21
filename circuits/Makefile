@@ -1,7 +1,7 @@
 PACT_GEN=python3 ../../pact-zk-generator/run_zk_gen.py
 CLIENT_ZKP_DATA=../client/zkp
 CONTRACTS_DIR=../pact/contracts
-MODULE_NAME=cyclone-withdraw-verifier-v0
+MODULE_NAME=cyklone-withdraw-verifier-v0
 
 
 MODULE_FILE=${MODULE_NAME}.pact
