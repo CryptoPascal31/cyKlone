@@ -1,0 +1,12 @@
+codeFile: .poseidon.pact
+data:
+publicMeta:
+  chainId: "{{chain}}"
+  sender: "{{sender}}"
+  gasLimit: 150000
+  gasPrice: 0.00000001
+  ttl: 3600
+networkId: "{{network}}"
+signers:
+  - public: "{{sender-key}}"
+type: exec
