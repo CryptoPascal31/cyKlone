@@ -1,5 +1,5 @@
 (module cyKlone-v0-10 GOVERNANCE
-  (defconst VERSION:string "0.1")
+  (defconst VERSION:string "0.11")
 
   (use free.util-lists [remove-first append-last first replace-at])
   (use free.util-zk [BN128-GROUP-MODULUS])
@@ -245,7 +245,7 @@
     (with-capability (WITHDRAWAL)
       (enforce-withdraw dst-account nullifier-hash root proof)
       (install-capability (coin.TRANSFER RESERVE dst-account WITHDRAW-AMOUNT))
-      (coin.transfer-create RESERVE dst-account WITHDRAW-AMOUNT dst-guard ))
+      (coin.transfer-create RESERVE dst-account dst-guard WITHDRAW-AMOUNT))
 
   )
 
