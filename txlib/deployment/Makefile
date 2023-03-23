@@ -1,4 +1,4 @@
-MACROS=-DNAMESPACE=free -DINIT
+MACROS=-DNAMESPACE=free #-DINIT
 DATA_FILE=testnet.yaml
 
 all: cyklone.json cyklone-work-gas-station.json poseidon.json poseidon-constants.json
