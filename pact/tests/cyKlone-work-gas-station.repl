@@ -9,6 +9,9 @@
 ;Stub module
 (module cyKlone-v0-10 G
   (defcap G () true)
+
+  (defconst WORK-GAS:integer 120000)
+
   (defschema S my-bool:bool)
   (deftable T:{S})
 
@@ -36,8 +39,8 @@
 ; Fund the gas station
 (begin-tx)
 (use free.cyKlone-work-gas-station)
-(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" ACCOUNT 1.0)]}])
-(coin.transfer "alice" ACCOUNT 1.0)
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" GAS_PAYER_ACCOUNT 1.0)]}])
+(coin.transfer "alice" GAS_PAYER_ACCOUNT 1.0)
 (commit-tx)
 
 
@@ -48,7 +51,7 @@
 
 (test-capability (coin.GAS))
 (test-capability (GAS_PAYER "user" 1 1.0))
-(expect "buy gas succeeds" "Write succeeded" (coin.buy-gas ACCOUNT  1.0))
+(expect "buy gas succeeds" "Write succeeded" (coin.buy-gas GAS_PAYER_ACCOUNT  1.0))
 (commit-tx)
 
 

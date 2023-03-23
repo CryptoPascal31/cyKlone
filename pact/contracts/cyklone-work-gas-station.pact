@@ -1,24 +1,25 @@
 (module cyKlone-work-gas-station GOVERNANCE
-  (defconst VERSION 0.1)
+  (defconst VERSION:string "0.2")
   (implements gas-payer-v1)
 
   (use coin)
   (use util.guards)
   (use free.util-math)
+  (use free.cyKlone-v0-10 [has-work WORK-GAS])
 
   (defcap GOVERNANCE ()
     (enforce-keyset "free.cyKlone-test-ks"))
 
-  (defconst ACCOUNT:string "cyKlone-work-gas")
+  (defconst GAS_PAYER_ACCOUNT:string "cyKlone-work-gas")
 
   (defconst GAS-PRICE:decimal (xEy 1.0 -8))
 
-  (defconst GAS-LIMIT:integer 120000)
+  (defconst GAS-LIMIT:integer WORK-GAS)
 
   (defconst ALLOWED-CODE:[string] ["(free.cyKlone-v0-10.work)"])
 
   (defun gas-payer-account:string()
-    ACCOUNT)
+    GAS_PAYER_ACCOUNT)
 
   (defcap GAS_PAYER:bool (user:string limit:integer price:decimal)
     (bind (read-msg) {'tx-type:=tx-type, 'exec-code:=exec-code}
@@ -29,7 +30,7 @@
       (enforce (and (= gas-price GAS-PRICE)
                     (= gas-limit GAS-LIMIT)) "Gas price/limit incorrect"))
 
-    (let ((has-work (free.cyKlone-v0-10.has-work)))
+    (let ((has-work (has-work)))
       (enforce has-work "No work"))
     (compose-capability (ALLOW_GAS))
   )
@@ -38,7 +39,7 @@
 
   (defun init ()
     (with-capability (GOVERNANCE)
-      (coin.create-account ACCOUNT (create-gas-payer-guard)))
+      (coin.create-account (gas-payer-account) (create-gas-payer-guard)))
   )
 
   (defun create-gas-payer-guard:guard ()

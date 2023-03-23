@@ -1,6 +1,7 @@
 (module cyKlone-v0-10 GOVERNANCE
-  (defconst VERSION:string "0.11")
+  (defconst VERSION:string "0.2")
 
+  (use free.util-math [xEy])
   (use free.util-lists [remove-first append-last first replace-at])
   (use free.util-zk [BN128-GROUP-MODULUS])
 
@@ -15,7 +16,11 @@
 
   (defconst DENOMINATION:decimal 10.0)
 
-  (defconst FEES:decimal 0.01)
+  (defconst WORK-ROUNDS:integer 6)
+
+  (defconst WORK-GAS:integer 120000)
+
+  (defconst FEES:decimal (xEy (* 1.0 (* WORK-ROUNDS WORK-GAS)) -8))
 
   (defconst WITHDRAW-AMOUNT:decimal (- DENOMINATION FEES))
 
