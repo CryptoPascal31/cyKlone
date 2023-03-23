@@ -373,10 +373,7 @@ async function compute_withdrawal_data()
 
   const known_roots = await get_last_roots()
   if(! known_roots.includes(data.pathRoot))
-  {
-    log.warn("Computed root not present on chain")
-    return
-  }
+    throw Error("Computed root not present on chain")
 
   data.indexWord = compute_index_word(path.pathIndices)
 
