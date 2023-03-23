@@ -26,7 +26,7 @@
 
 
 (namespace 'free)
-(load "../contracts/cyKlone-work-gas-station.pact")
+(load "../contracts/cyklone-work-gas-station.pact")
 (free.cyKlone-work-gas-station.init)
 (commit-tx)
 
