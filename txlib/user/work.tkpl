@@ -1,0 +1,16 @@
+code: |-
+  ({{module}}.work)
+data:
+meta:
+  chainId: "{{chain}}"
+  sender: "{{gas-station-acct}}"
+  gasLimit: 120000
+  gasPrice: 0.00000001
+  ttl: 600
+networkId: "{{network}}"
+signers:
+  - public: "{{tmp-key}}"
+    caps:
+      - name: "{{gas-station}}.GAS_PAYER"
+        args: ["hi", {int: 1}, 1.0]
+type: exec

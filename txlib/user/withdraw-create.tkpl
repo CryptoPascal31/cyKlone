@@ -1,0 +1,20 @@
+code: |-
+  ({{module}}.withdraw-create "{{dst-account}}" (read-keyset 'ks) "{{nullifier-hash}}" "{{root}}" "{{proof}}")
+data:
+  ks:
+    pred: "keys-all"
+    keys:
+      - {{dst-key}}
+meta:
+  chainId: "{{chain}}"
+  sender: "{{{gas-payer}}}"
+  gasLimit: 50000
+  gasPrice: 0.00000001
+  ttl: 600
+networkId: "{{network}}"
+signers:
+  - public: "{{gas-payer-key}}"
+    caps:
+      - name: "coin.GAS"
+        args: []
+type: exec

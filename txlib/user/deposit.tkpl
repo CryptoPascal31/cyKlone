@@ -1,0 +1,18 @@
+code: |-
+  ({{module}}.deposit "{{{from-acct}}}" "{{{commitment}}}")
+data:
+meta:
+  chainId: "{{chain}}"
+  sender: "{{{from-acct}}}"
+  gasLimit: 3000
+  gasPrice: 0.00000001
+  ttl: 600
+networkId: "{{network}}"
+signers:
+  - public: "{{from-key}}"
+    caps:
+      - name: "coin.TRANSFER"
+        args: ["{{{from-acct}}}", "{{{reserve}}}", {{amount}}]
+      - name: "coin.GAS"
+        args: []
+type: exec
