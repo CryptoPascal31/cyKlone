@@ -1,5 +1,5 @@
 MACROS=-DNAMESPACE=free #-DINIT
-DATA_FILE=testnet.yaml
+DATA_FILE=testnet_data.yaml
 
 all: cyklone.json cyklone-work-gas-station.json poseidon.json poseidon-constants.json
 
@@ -16,4 +16,4 @@ all: cyklone.json cyklone-work-gas-station.json poseidon.json poseidon-constants
 clean:
 	rm -f .*.pact
 	rm -f *.json
-	find . -name "*.yaml" |grep -v testnet | xargs rm -f
+	find . -name "*.yaml" |grep -v "_data.yaml" | xargs rm -f
