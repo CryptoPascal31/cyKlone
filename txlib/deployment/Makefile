@@ -1,7 +1,8 @@
-MACROS=-DNAMESPACE=free #-DINIT
+#MACROS=-DNAMESPACE=free -DINIT
+MACROS=-DNAMESPACE=free
 DATA_FILE=testnet_data.yaml
 
-all: cyklone.json cyklone-work-gas-station.json poseidon.json poseidon-constants.json
+all: cyklone.json cyklone-work-gas-station.json cyklone-relay.json poseidon.json poseidon-constants.json
 
 .%.pact: %.m4
 	m4 ${MACROS} $< > $@

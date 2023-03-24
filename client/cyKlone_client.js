@@ -20,6 +20,7 @@ const NETWORK = "testnet04"
 const MODULE = "free.cyKlone-v0-10"
 
 const WORK_GAS_STATION = "free.cyKlone-work-gas-station"
+const RELAY_MODULE = "free.cyKlone-relay-v0"
 
 const DEPOSIT_AMOUNT = 10.0
 
@@ -153,6 +154,13 @@ async function get_account_key(account)
   return data.guard.keys[0]
 }
 
+async function get_relayer_account(account)
+{
+  return  await local_pact(`(${RELAY_MODULE}.relayer-account "${account}")`);
+}
+
+
+
 async function get_deposit_paramaters()
 {
   return await local_pact(`(use ${MODULE}){'amount:DENOMINATION, 'reserve:RESERVE}`)
@@ -182,6 +190,24 @@ async function generate_withdrawal_trx(data, gas_payer)
   cmd.code = `(${MODULE}.withdraw "${data.account}" "${data.nullifier_hash}" "${data.root}" "${data.proof}")`
   cmd.setMeta({sender:gas_payer, chainId: CHAIN.toString(), gasLimit: 35000}, NETWORK);
   cmd.addCap('coin.GAS', gas_payer_key)
+
+  return cmd
+}
+
+async function generate_withdrawal_relay_trx(data, final_account, final_account_key)
+{
+  const cmd = new kda_client.PactCommand();
+  const zero = new pactjs.PactNumber(0.0);
+  const gas_payer = await local_pact(`(${RELAY_MODULE}.gas-payer-account)`);
+  const tmp_key = crypto_utils.genKeyPair();
+
+  cmd.code = `(${RELAY_MODULE}.withdraw-create-relay "${final_account}" (read-keyset 'ks) "${data.nullifier_hash}" "${data.root}" "${data.proof}")`
+  cmd.setMeta({sender:gas_payer, chainId: CHAIN.toString(), gasLimit: 35000}, NETWORK);
+  cmd.addData({ks:{pred:"keys-all", keys:[final_account_key]} })
+  cmd.addCap(`${RELAY_MODULE}.GAS_PAYER`, tmp_key.publicKey, "", zero.toPactInteger(), zero.toPactDecimal())
+
+  const {hash} = cmd.createCommand()
+  cmd.addSignatures(crypto_utils.signHash(hash, tmp_key))
 
   return cmd
 }
@@ -221,7 +247,7 @@ function export_yaml_trx(cmd)
 
   let sigdata = {cmd:_cmd.cmd,
                  hash:_cmd.hash,
-                 sigs: Object.fromEntries(cmd.signers.map( (x) => [x.pubKey, null]))
+                 sigs: Object.fromEntries(cmd.signers.map(  (x,i) => [x.pubKey, cmd.sigs[i] === undefined?null:cmd.sigs[i].sig]))
                };
 
 
@@ -349,14 +375,14 @@ function compute_index_word(input_array)
 
 
 
-async function compute_withdrawal_data()
+async function compute_withdrawal_data(account)
 {
   let answer  = await inquirer.prompt([{type:"input", name:"mnemonic", message:"Deposit's Mnemonic"},
-                                       {type:"input", name:"password", message:"Password to protect your deposit:" },
-                                       {type:"input", name:"account", message:"Acccount:" }]);
+                                       {type:"input", name:"password", message:"Password to protect your deposit:" }])
 
   data = await compute_deposit_data(answer.mnemonic, answer.password);
-  data.account = answer.account
+
+  data.account = account
   data.account_hash = hash_dec(data.account)
 
   console.log(chalk.green("Commitment: ") + data.commitment_str)
@@ -396,13 +422,35 @@ async function compute_withdrawal_data()
 
 async function create_withdrawal_transaction()
 {
-  data = await compute_withdrawal_data()
+  const answer  = await inquirer.prompt([{type:"input", name:"account", message:"Acccount:" }]);
+  data = await compute_withdrawal_data(answer.account)
   console.log(chalk.green("Nullifier Hash: ") + data.nullifier_hash)
   console.log(chalk.green("Root: ") + data.root)
   console.log(chalk.green("Proof: ") + data.proof)
   const {gas_payer,}  = await inquirer.prompt([{type:"input", name:"gas_payer", message:"Gas payer:" }])
 
   const trx = await generate_withdrawal_trx(data, gas_payer)
+  export_yaml_trx(trx);
+}
+
+async function create_withdrawal_relayer_transaction()
+{
+  const answer  = await inquirer.prompt([{type:"input", name:"account", message:"Acccount:" },
+                                         {type:"input", name:"account_key", message:"Acccount Key (single 'keys-all'):" }]);
+
+  const relayer_account = await get_relayer_account(answer.account)
+  console.log(chalk.green("Relayer_account: ") + relayer_account)
+
+
+
+  data = await compute_withdrawal_data(relayer_account)
+  console.log(chalk.green("Nullifier Hash: ") + data.nullifier_hash)
+  console.log(chalk.green("Root: ") + data.root)
+  console.log(chalk.green("Proof: ") + data.proof)
+
+  trx = await generate_withdrawal_relay_trx(data, answer.account, answer.account_key)
+  console.log(trx)
+  //const trx = await generate_withdrawal_trx(data, gas_payer)
   export_yaml_trx(trx);
 }
 
@@ -416,6 +464,7 @@ async function main_menu()
   const COMPLETE_RUNNING_DEPOSITS = "Complete current deposits";
   const GENERATE_PROOF = "Generate proof";
   const WITHDRAW ="Withdraw";
+  const WITHDRAW_RELAY ="Withdraw with relay";
 
   while(true)
   {
@@ -428,6 +477,7 @@ async function main_menu()
                                                "Deposit status",
                                                GENERATE_PROOF,
                                                WITHDRAW,
+                                               WITHDRAW_RELAY,
                                                EXIT]}])
     if(answer.menu_item === EXIT)
       break;
@@ -450,6 +500,9 @@ async function main_menu()
         break;
       case WITHDRAW:
         await create_withdrawal_transaction();
+        break;
+      case WITHDRAW_RELAY:
+        await create_withdrawal_relayer_transaction()
         break;
 
 
