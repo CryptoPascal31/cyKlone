@@ -29,10 +29,24 @@ Select **Complete current deposits** in the menu. This sends the `(work)` transa
 Select **Update local database** in the menu. This download the last version of the "on-chain Merle tree" and rebuilds it locally.
 
 Select **Withdraw** in the menu.
-  - Enter the mnemonic noted during deposit
   - Enter the account where the money must be sent.
+  - Enter the mnemonic noted during deposit
   - Check that the commitment matches with the deposit one.
   - Enter the gas paying account
 
 The file `tx.yaml` is generated. It has to be signed by the gas payer.
 Copy/Paste the content into Chainweaver's SigBuilder, or use the tool "kda-tool" to sign and send.
+
+
+## Withdrawal with relay
+Select **Update local database** in the menu. This download the last version of the "on-chain Merle tree" and rebuilds it locally.
+
+Select **Withdraw with relay** in the menu.
+  - Enter the account where the money must be sent.
+  - Enter the mnemonic noted during deposit
+  - Check that the commitment matches with the deposit one.
+
+The file `tx.yaml` is generated. Since we use the relayer contract, this is the contract who pays anonymously the gas.
+The transaction doesn't need to be signed by one of our key.
+
+Copy/Paste the content into Chainweaver's SigBuilder, or use the tool "kda-tool" to send it (the command `kda combine-sigs` can be useful to transform the YAML transaction to JSON).
