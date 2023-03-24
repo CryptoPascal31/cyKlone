@@ -2,6 +2,11 @@
 
 **Work in progress**
 
+
+## Intro
+
+
+
 This project aims to create an anonymity contract for Kadena, using the new Zero Knowledge features of Pact 4.6.
 
 This work is based on Tornado Cash, with following specificities:
@@ -19,3 +24,26 @@ This project uses the following tools:
   - [Pact ZK tool](https://github.com/CryptoPascal31/pact-zk-generator) for Pact module automatic generation.
   - [Pact util libraries](https://github.com/CryptoPascal31/pact-util-lib)
   - [Pact ZK hash library](https://github.com/CryptoPascal31/pact-zk-hashes) to compute on-chain Poseidon hashes.
+
+## Principle of operation
+
+The protocol is organized in several modules:
+   - `cyKlone-V0`  => main module, manager most stuffs
+   - `poseidon-hash-v1` and `poseidon-constants-v1` => Compute the Poseidon Hash
+   - `cyklone-withdraw-verifier-v0` => Auto generated module to verify the ZK proof.
+
+There are 2 helpers modules:
+   - `cyKlone-work-gas-station` => Gas station to pay gas for the `(work)` transactions.
+   - `cyKlone-relay-v0` => Gas station and intermediary accounts to let users withdraw while paying gas anymously.
+
+![image info](./doc/img/cyKlone_diagram.png)
+
+
+## TODO
+
+TL;DR: **A lot**
+
+  - Improve contract to handle several denominations.
+  - Add more tests.
+  - Rewrite the JS client by breaking into one or more libraries.
+  - Organize a safe setup for the ZK keys.
