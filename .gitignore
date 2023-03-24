@@ -3,3 +3,4 @@ client/node_modules/*
 .pact_zk_state
 circuits/*.out
 keys/*.yaml
+txlib/*/*.json
