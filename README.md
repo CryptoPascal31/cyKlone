@@ -28,13 +28,13 @@ This project uses the following tools:
 ## Principle of operation
 
 The protocol is organized in several modules:
-   - `cyKlone-V0`  => main module, manager most stuffs
+   - `cyKlone-V0`  => main module, manages most stuffs
    - `poseidon-hash-v1` and `poseidon-constants-v1` => Compute the Poseidon Hash
    - `cyklone-withdraw-verifier-v0` => Auto generated module to verify the ZK proof.
 
 There are 2 helpers modules:
    - `cyKlone-work-gas-station` => Gas station to pay gas for the `(work)` transactions.
-   - `cyKlone-relay-v0` => Gas station and intermediary accounts to let users withdraw while paying gas anymously.
+   - `cyKlone-relay-v0` => Gas station and intermediate account to let users withdraw while paying gas anonymously.
 
 ![image info](./doc/img/cyKlone_diagram.png)
 
