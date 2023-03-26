@@ -2,11 +2,10 @@
 import {PactNumber} from '@kadena/pactjs'
 import {PactCommand} from '@kadena/client'
 import {genKeyPair, signHash} from '@kadena/cryptography-utils'
+import {MODULE, RELAY_MODULE, WORK_GAS_STATION} from './pact_modules.js'
 
 const PACT_ZERO = new PactNumber(0.0)
-const MODULE = "free.cyKlone-v0-10"
-const RELAY_MODULE = "free.cyKlone-relay-v0"
-const WORK_GAS_STATION = "free.cyKlone-work-gas-station"
+
 
 class CyKloneTransactionBuilder
 {

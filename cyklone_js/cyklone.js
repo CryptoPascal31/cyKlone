@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-
+import {MODULE, RELAY_MODULE} from './pact_modules.js'
 import {CyKloneTree} from './cyklone_tree.js';
 import {int_to_b64, hash_dec, encode_proof} from "./codecs.js"
 import {initialize as zok_init} from 'zokrates-js';
@@ -7,9 +7,6 @@ import {validateMnemonic, mnemonicToSeedSync} from 'bip39'
 import {Scalar as S} from 'ffjavascript'
 
 const P = "21888242871839275222246405745257275088548364400416034343698204186575808495617";
-
-const MODULE = "free.cyKlone-v0-10"
-const RELAY_MODULE = "free.cyKlone-relay-v0"
 
 class CyKlone
 {

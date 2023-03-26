@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: MIT
-
+import {MODULE} from './pact_modules.js'
 import {buildPoseidonReference} from "circomlibjs"
 import {MerkleTree} from "fixed-merkle-tree"
 import {b64_to_dec} from "./codecs.js"
-
-const MODULE = "free.cyKlone-v0-10"
 
 const ZERO = "8355858611563045677440680357889341193906656246723581940305640971585549179022";
 
