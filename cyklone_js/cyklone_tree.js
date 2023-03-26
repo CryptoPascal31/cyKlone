@@ -5,6 +5,8 @@ import {MerkleTree} from "fixed-merkle-tree"
 import {b64_to_dec} from "./codecs.js"
 
 const ZERO = "8355858611563045677440680357889341193906656246723581940305640971585549179022";
+const MAX_DOWNLOAD_LEAF = 100
+
 
 class CyKloneTree
 {
@@ -32,9 +34,8 @@ class CyKloneTree
                 );
   }
 
-  get_deposit_chunk(start)
+  get_deposit_chunk(start, end)
   {
-    const end = start + 100
     return this.kadena_local(`(${MODULE}.get-deposits-range ${start} ${end})`);
   }
 
@@ -58,7 +59,7 @@ class CyKloneTree
 
     while(tree_size < rank)
     {
-      let chunk = await this.get_deposit_chunk(this.tree.elements.length)
+      let chunk = await this.get_deposit_chunk(tree_size, Math.min(tree_size + MAX_DOWNLOAD_LEAF, rank-1));
       console.log(`Updating Progress ${tree_size} => ${tree_size + chunk.length}`)
       this.tree.bulkInsert(chunk.map(b64_to_dec))
       tree_size = this.tree.elements.length
