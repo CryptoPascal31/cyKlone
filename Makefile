@@ -7,3 +7,4 @@ clean:
 		$(MAKE) -C circuits clean
 		$(MAKE) -C txlib clean
 		$(MAKE) -C client clean
+		$(MAKE) -C cyklone_js clean
