@@ -344,7 +344,32 @@
     "@ethersproject/properties" "^5.7.0"
     "@ethersproject/strings" "^5.7.0"
 
-"@kadena/cryptography-utils@^0.1.4":
+"@kadena/chainweb-node-client@0.1.4":
+  version "0.1.4"
+  resolved "https://registry.yarnpkg.com/@kadena/chainweb-node-client/-/chainweb-node-client-0.1.4.tgz#8baeae01ddff3d8986a6184e755c03fd804947a6"
+  integrity sha512-BeCS6KUHGapRbskWQbqfwIwt4y+J4sX6E01XCTiV/8pVexF5h4By3/0LCUkxdeQZ4aZ4WqruoNjo35AOOTmu1g==
+  dependencies:
+    "@kadena/cryptography-utils" "0.1.4"
+    "@kadena/pactjs" "0.1.4"
+    "@kadena/types" "0.1.2"
+    "@types/isomorphic-fetch" "~0.0.36"
+    cross-fetch "~3.1.5"
+    node-fetch "~2.6.2"
+
+"@kadena/client@^0.1.10":
+  version "0.1.10"
+  resolved "https://registry.yarnpkg.com/@kadena/client/-/client-0.1.10.tgz#29987322d42eed6f481a0db0d2fdd112662cd6d1"
+  integrity sha512-SyQnZZQi6ucALZ0agpTzrjhG1Hf/awMuTPcHJJ6Ix3xxmnOfanLfHV/mj2CDDG3DNuIfex5W3vqO13PDtbMwTg==
+  dependencies:
+    "@kadena/chainweb-node-client" "0.1.4"
+    "@kadena/cryptography-utils" "0.1.4"
+    "@kadena/pactjs" "0.1.4"
+    "@kadena/types" "0.1.2"
+    cross-fetch "~3.1.5"
+    debug "~4.3.4"
+    yaml "~2.1.1"
+
+"@kadena/cryptography-utils@0.1.4", "@kadena/cryptography-utils@^0.1.4":
   version "0.1.4"
   resolved "https://registry.yarnpkg.com/@kadena/cryptography-utils/-/cryptography-utils-0.1.4.tgz#b424fee364a367daea30c971b2e2662352ae2966"
   integrity sha512-Dk//iGdbnvqDRKcaq6WExJzLBSZWGUniie8jcx/iGpmtY9OWUZe7FHoHBdwaf3iNxiW4zyoVGz4p7JfYZ1M9PA==
@@ -353,6 +378,14 @@
     blakejs "^1.2.1"
     buffer "^6.0.3"
     tweetnacl "^1.0.3"
+
+"@kadena/pactjs@0.1.4", "@kadena/pactjs@^0.1.4":
+  version "0.1.4"
+  resolved "https://registry.yarnpkg.com/@kadena/pactjs/-/pactjs-0.1.4.tgz#e5f0fdd539b28d8a4241096a917f7eb567f5a360"
+  integrity sha512-KtiNCQMIZ2bnfWkCMP9aWARx2HNz8stQvwYgGIpi1MaMCo3teeffl6UXjubSF7LpY6YYeQB4+CO8dHmbYq/hZA==
+  dependencies:
+    "@kadena/types" "0.1.2"
+    bignumber.js "^9.0.2"
 
 "@kadena/types@0.1.2":
   version "0.1.2"
@@ -363,6 +396,11 @@
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/@noble/hashes/-/hashes-1.3.0.tgz#085fd70f6d7d9d109671090ccae1d3bec62554a1"
   integrity sha512-ilHEACi9DwqJB0pw7kv+Apvh50jiiSyR/cQ3y4W7lOR5mhvn/50FLUfsnfJz0BDZtl/RR16kXvptiv6q1msYZg==
+
+"@types/isomorphic-fetch@~0.0.36":
+  version "0.0.36"
+  resolved "https://registry.yarnpkg.com/@types/isomorphic-fetch/-/isomorphic-fetch-0.0.36.tgz#3a6d8f63974baf26b10fd1314db910633108a769"
+  integrity sha512-ulw4d+vW1HKn4oErSmNN2HYEcHGq0N1C5exlrMM0CRqX1UUpFhGb5lwiom5j9KN3LBJJDLRmYIZz1ghm7FIzZw==
 
 aes-js@3.0.0:
   version "3.0.0"
@@ -383,6 +421,11 @@ bech32@1.1.4:
   version "1.1.4"
   resolved "https://registry.yarnpkg.com/bech32/-/bech32-1.1.4.tgz#e38c9f37bf179b8eb16ae3a772b40c356d4832e9"
   integrity sha512-s0IrSOzLlbvX7yp4WBfPITzpAU8sqQcpsmwXDiKwrG4r491vwCO/XpejasRNl0piBMe/DvP4Tz0mIS/X1DPJBQ==
+
+bignumber.js@^9.0.2:
+  version "9.1.1"
+  resolved "https://registry.yarnpkg.com/bignumber.js/-/bignumber.js-9.1.1.tgz#c4df7dc496bd849d4c9464344c1aa74228b4dac6"
+  integrity sha512-pHm4LsMJ6lzgNGVfZHjMoO8sdoRhOzOH4MLmY65Jg70bpxCKu5iOHNJyfF6OyvYw7t8Fpf35RuzUyqnQsj8Vig==
 
 bip39@^3.1.0:
   version "3.1.0"
@@ -453,6 +496,20 @@ circomlibjs@^0.1.7:
     blake2b "^2.1.3"
     ethers "^5.5.1"
     ffjavascript "^0.2.45"
+
+cross-fetch@~3.1.5:
+  version "3.1.5"
+  resolved "https://registry.yarnpkg.com/cross-fetch/-/cross-fetch-3.1.5.tgz#e1389f44d9e7ba767907f7af8454787952ab534f"
+  integrity sha512-lvb1SBsI0Z7GDwmuid+mU3kWVBwTVUbe7S0H52yaaAdQOXq2YktTCZdlAcNKFzE6QtRz0snpw9bNiPeOIkkQvw==
+  dependencies:
+    node-fetch "2.6.7"
+
+debug@~4.3.4:
+  version "4.3.4"
+  resolved "https://registry.yarnpkg.com/debug/-/debug-4.3.4.tgz#1319f6579357f2338d3337d2cdd4914bb5dcc865"
+  integrity sha512-PRWFHuSU3eDtQJPvnNY7Jcket1j0t5OuOsFzPPzsekD52Zl8qUfFIPEiswXqIvHWGVHOgX+7G/vCNNhehwxfkQ==
+  dependencies:
+    ms "2.1.2"
 
 elliptic@6.5.4:
   version "6.5.4"
@@ -558,6 +615,11 @@ minimalistic-crypto-utils@^1.0.1:
   resolved "https://registry.yarnpkg.com/minimalistic-crypto-utils/-/minimalistic-crypto-utils-1.0.1.tgz#f6c00c1c0b082246e5c4d99dfb8c7c083b2b582a"
   integrity sha512-JIYlbt6g8i5jKfJ3xz7rF0LXmv2TkDxBLUkiBeZ7bAx4GnnNMr8xFpGnOxn6GhTEHx3SjRrZEoU+j04prX1ktg==
 
+ms@2.1.2:
+  version "2.1.2"
+  resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.2.tgz#d09d1f357b443f493382a8eb3ccd183872ae6009"
+  integrity sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==
+
 nanoassert@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/nanoassert/-/nanoassert-2.0.0.tgz#a05f86de6c7a51618038a620f88878ed1e490c09"
@@ -567,6 +629,20 @@ node-addon-api@^3.0.0:
   version "3.2.1"
   resolved "https://registry.yarnpkg.com/node-addon-api/-/node-addon-api-3.2.1.tgz#81325e0a2117789c0128dab65e7e38f07ceba161"
   integrity sha512-mmcei9JghVNDYydghQmeDX8KoAm0FAiYyIcUt/N4nhyAipB17pllZQDOJD2fotxABnt4Mdz+dKTO7eftLg4d0A==
+
+node-fetch@2.6.7:
+  version "2.6.7"
+  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.7.tgz#24de9fba827e3b4ae44dc8b20256a379160052ad"
+  integrity sha512-ZjMPFEfVx5j+y2yF35Kzx5sF7kDzxuDj6ziH4FFbOp87zKDZNx8yExJIb05OGF4Nlt9IHFIMBkRl41VdvcNdbQ==
+  dependencies:
+    whatwg-url "^5.0.0"
+
+node-fetch@~2.6.2:
+  version "2.6.9"
+  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.9.tgz#7c7f744b5cc6eb5fd404e0c7a9fec630a55657e6"
+  integrity sha512-DJm/CJkZkRjKKj4Zi4BsKVZh3ValV5IR5s7LVZnW+6YMh0W1BfNA8XSs6DLMGYlId5F3KnA70uu2qepcR08Qqg==
+  dependencies:
+    whatwg-url "^5.0.0"
 
 node-gyp-build@^4.2.2:
   version "4.6.0"
@@ -604,6 +680,11 @@ string_decoder@^1.1.1:
   dependencies:
     safe-buffer "~5.2.0"
 
+tr46@~0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/tr46/-/tr46-0.0.3.tgz#8184fd347dac9cdc185992f3a6622e14b9d9ab6a"
+  integrity sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==
+
 tweetnacl@^1.0.3:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/tweetnacl/-/tweetnacl-1.0.3.tgz#ac0af71680458d8a6378d0d0d050ab1407d35596"
@@ -631,10 +712,28 @@ web-worker@^1.2.0:
   resolved "https://registry.yarnpkg.com/web-worker/-/web-worker-1.2.0.tgz#5d85a04a7fbc1e7db58f66595d7a3ac7c9c180da"
   integrity sha512-PgF341avzqyx60neE9DD+XS26MMNMoUQRz9NOZwW32nPQrF6p77f1htcnjBSEV8BGMKZ16choqUG4hyI0Hx7mA==
 
+webidl-conversions@^3.0.0:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/webidl-conversions/-/webidl-conversions-3.0.1.tgz#24534275e2a7bc6be7bc86611cc16ae0a5654871"
+  integrity sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==
+
+whatwg-url@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/whatwg-url/-/whatwg-url-5.0.0.tgz#966454e8765462e37644d3626f6742ce8b70965d"
+  integrity sha512-saE57nupxk6v3HY35+jzBwYa0rKSy0XR8JSxZPwgLr7ys0IBzhGviA1/TUGJLmSVqs8pb9AnvICXEuOHLprYTw==
+  dependencies:
+    tr46 "~0.0.3"
+    webidl-conversions "^3.0.0"
+
 ws@7.4.6:
   version "7.4.6"
   resolved "https://registry.yarnpkg.com/ws/-/ws-7.4.6.tgz#5654ca8ecdeee47c33a9a4bf6d28e2be2980377c"
   integrity sha512-YmhHDO4MzaDLB+M9ym/mDA5z0naX8j7SIlT8f8z+I0VtzsRbekxEutHSme7NPS2qE8StCYQNUnfWdXta/Yu85A==
+
+yaml@~2.1.1:
+  version "2.1.3"
+  resolved "https://registry.yarnpkg.com/yaml/-/yaml-2.1.3.tgz#9b3a4c8aff9821b696275c79a8bee8399d945207"
+  integrity sha512-AacA8nRULjKMX2DvWvOAdBZMOfQlypSFkjcOcu9FalllIDJ1kvlREzcdIZmidQUqqeMv7jorHjq2HlLv/+c2lg==
 
 zokrates-js@^1.1.5:
   version "1.1.5"
