@@ -52,7 +52,6 @@ class CyKlone
 
   compute_deposit_data(bip39_phrase, password)
   {
-    console.log(bip39_phrase)
     if (! validateMnemonic(bip39_phrase))
       throw new Error('Invalid Mnemonic');
 
