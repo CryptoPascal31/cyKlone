@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 import {CyKlone, CyKloneTransactionBuilder} from 'cyklone_js';
 import {PactCommand} from '@kadena/client'
 import {generateMnemonic} from 'bip39';
