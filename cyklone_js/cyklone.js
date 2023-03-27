@@ -53,6 +53,11 @@ class CyKlone
                            .then((res) => res.map((x) => x.int))
   }
 
+  is_withdrawn(nullifier_hash)
+  {
+   return this.kadena_local(`(${MODULE}.get-nullifier-state "${nullifier_hash}")`)
+  }
+
   current_work()
   {
     return this.kadena_local(`(use ${MODULE})
@@ -132,6 +137,13 @@ class CyKlone
     /* Converts the result to base64, to prepare the transaction */
     data.nullifier_hash = int_to_b64(nullifier_hash);
     data.root = int_to_b64(data.pathRoot);
+
+    /* Once we have recomputed the nullfier, we can check weither it was already withdrawn */
+    if(this.check_roots_on_chain)
+    {
+      if(await this.is_withdrawn(data.nullifier_hash))
+        throw Error("This deposit is already withdrawn")
+    }
 
     /* And finally compute the ZK proof */
     const proof = this.zokrates.generateProof(this.circuit_withdraw, witness, this.proving_key);
