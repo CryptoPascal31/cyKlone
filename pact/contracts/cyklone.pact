@@ -25,19 +25,21 @@
   (defconst WITHDRAW-AMOUNT:decimal (- DENOMINATION FEES))
 
 
+
   (defschema merkle-data-schema
-    subtrees:[integer]
-    current-level:integer
-    current-hash:integer
+    @doc "Current state of the Merkle tree calculation"
+    subtrees:[integer] ;The hash of the nodes (on for each level) of the completed subtrees from left
+    current-level:integer ;State of the calculation: last computed level of the tree
+    current-hash:integer ;Hash the last computed node
   )
 
   (defschema global-state-schema
-    deposit-count:integer
-    current-rank:integer
-    withdrawal-count:integer
-    last-known-roots:[integer]
-    merkle-tree-data:object{merkle-data-schema}
-    deposit-queue:[integer]
+    deposit-count:integer ;The total of deposit already made (including thoses in queue)
+    current-rank:integer ; The rank of the next deposit. The rank is updated once a deposit has been fully computed
+    withdrawal-count:integer ; The total number of withdrawals already made
+    last-known-roots:[integer] ;The last 32 computed roots of the Merkle tree
+    merkle-tree-data:object{merkle-data-schema} ;Current state of the merkle tree calculation
+    deposit-queue:[integer] ; The queue of deposits but not already inserted into the tree
   )
 
   (defschema nullifier-schema
@@ -129,7 +131,9 @@
   ;-----------------------------------------------------------------------------
   (defun hash-level:object{merkle-data-schema} (rank:integer tree-data:object{merkle-data-schema})
     @doc "Compute a level of the Merkle tree"
+    ; This algorithm is an exact copycat of Tornado Cash
     (bind tree-data {'subtrees:=subtrees, 'current-level:=level, 'current-hash:=previous-hash}
+      ; Our provenance can be obtained by watching the bit N of the rank of the leaf
       (let* ((on-left (not (is-bit-set rank level)))
              (new-hash (if on-left
                            (poseidon-hash [previous-hash (at level ZEROS)]) ; We are on left
@@ -137,6 +141,7 @@
 
           { 'current-level: (++ level),
             'current-hash: new-hash,
+            ; When we come from left, we update the hash of the subree under.
             'subtrees: (if on-left (replace-at subtrees level previous-hash) subtrees)}))
   )
 
@@ -167,22 +172,29 @@
     (require-capability (DO-WORK))
     (with-read global-state "" {'last-known-roots:=roots}
       (let* ((new-root (at 'current-hash in))
+             ; Take the last roots lists and insert the new computed root, managing the list as a FIFO.
+             ; => Remove the first element, and insert the new at the end;
              (updated-roots (remove-first (append-last roots new-root))))
+        ; Increment the insertion rank (ready for the next leaf), and save the new known roots FIFO
         (update global-state "" {'current-rank: (++ rank ), 'last-known-roots:updated-roots})
+        ; Finally reset the Merkle state object, by forcing the current level of calculation to 0.
         (+ {'current-level:0} in)))
   )
 
 
   (defun do-step ()
+    @doc "Do a step of work"
     (require-capability (DO-WORK))
     (with-read global-state "" {'merkle-tree-data:=data_0, 'current-rank:=rank, 'last-known-roots:=roots}
-
+      ; In case this is the first work iteration, insert a new leaf from the deposit queue
       (let* ((data_1 (if (= (at 'current-level data_0) 0)
                          (deposit-from-queue rank data_0)
                          data_0))
 
+             ; Always, hash Three level of the tree
              (data_2 (hash-multi-level rank data_1))
 
+             ; In case this is the last iteration, register the found root, and reset calculation
              (data_3 (if (= (at 'current-level data_2) MERKLE-TREE-DEPTH)
                          (register-root rank data_2)
                          data_2)))
