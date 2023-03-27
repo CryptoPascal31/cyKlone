@@ -10,10 +10,11 @@ const P = "218882428718392752222464057452572750885483644004160343436982041865758
 
 class CyKlone
 {
-  constructor(kadena_local, resource_loader)
+  constructor(kadena_local, resource_loader, check_roots_on_chain=true)
   {
     this.kadena_local = kadena_local;
     this.resource_loader = resource_loader;
+    this.check_roots_on_chain = check_roots_on_chain;
     this.tree = new CyKloneTree(kadena_local, resource_loader);
     this.zokrates = null;
     this.circuit_commit_hasher = null;
@@ -109,9 +110,12 @@ class CyKlone
     data.pathRoot = path.pathRoot
 
     /* Check that the root is present on chain */
-    const known_roots = await this.known_roots();
-    if(! known_roots.includes(data.pathRoot))
-      throw Error("Computed root not present on chain")
+    if(this.check_roots_on_chain)
+    {
+      const known_roots = await this.known_roots();
+      if(! known_roots.includes(data.pathRoot))
+        throw Error("Computed root not present on chain")
+    }
 
     /* Format index word as expected by the circuit */
     data.indexWord = format_index_word(path.pathIndices)
