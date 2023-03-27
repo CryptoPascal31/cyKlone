@@ -133,6 +133,7 @@ class CyKlone
   {
     /* In cas of relaying, we have to use the intermediate account to compute the proof */
     return this.relayer_account(account).then((x) => this.compute_withdrawal_data(x, bip39_phrase, password))
+                                        .then((x) => Object.assign(x, {final_acount:account}));
   }
 }
 
