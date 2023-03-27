@@ -166,29 +166,36 @@ async function main_menu()
                                                      EXIT]}])
     if(answer.menu_item === EXIT)
       break;
-    switch(answer.menu_item)
+    try
     {
-      case UPDATE_LOCAL_DB:
-        await update_merkle_tree();
-        break;
-      case DEPOSIT:
-        await create_deposit_transaction();
-        break;
-      case GENERATE_COMMITMENT:
-        await generate_commitment();
-        break;
-      case COMPLETE_RUNNING_DEPOSITS:
-        await send_work();
-        break;
-      case GENERATE_PROOF:
-        await generate_proof();
-        break;
-      case WITHDRAW:
-        await create_withdrawal_transaction();
-        break;
-      case WITHDRAW_RELAY:
-        await create_withdrawal_relayer_transaction()
-        break;
+      switch(answer.menu_item)
+      {
+        case UPDATE_LOCAL_DB:
+          await update_merkle_tree();
+          break;
+        case DEPOSIT:
+          await create_deposit_transaction();
+          break;
+        case GENERATE_COMMITMENT:
+          await generate_commitment();
+          break;
+        case COMPLETE_RUNNING_DEPOSITS:
+          await send_work();
+          break;
+        case GENERATE_PROOF:
+          await generate_proof();
+          break;
+        case WITHDRAW:
+          await create_withdrawal_transaction();
+          break;
+        case WITHDRAW_RELAY:
+          await create_withdrawal_relayer_transaction()
+          break;
+      }
+    }
+    catch (error)
+    {
+      console.error(chalk.red(error));
     }
   }
 }
