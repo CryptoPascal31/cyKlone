@@ -10,8 +10,6 @@ import YAML from 'yaml';
 const CHAINWEB = "https://api.testnet.chainweb.com"
 const CHAIN = 18
 const NETWORK = "testnet04"
-const MODULE = "free.cyKlone-v0-10"
-
 
 const API_SERVER = `${CHAINWEB}/chainweb/0.0/${NETWORK}/chain/${CHAIN}/pact`;
 const LOCAL_META = {chainId: CHAIN.toString(), gasLimit: 1000000};
@@ -88,8 +86,7 @@ async function create_deposit_transaction()
 
 async function send_work()
 {
-  const needed_work = await local_pact(`(bind (${MODULE}.get-state) {'deposit-count:=deps, 'current-rank:=rank}
-                                          (* 6 (- deps rank )))`)
+  const needed_work = await cyKlone.current_work()
   if(needed_work)
   {
       console.log(`Needed work:${needed_work}`);

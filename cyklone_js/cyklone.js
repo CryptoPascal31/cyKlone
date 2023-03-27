@@ -52,6 +52,14 @@ class CyKlone
                            .then((res) => res.map((x) => x.int))
   }
 
+  current_work()
+  {
+    return this.kadena_local(`(use ${MODULE})
+                              (bind (get-state) {'deposit-count:=deps, 'current-rank:=rank, 'merkle-tree-data:=merkle-data}
+                              (- (* WORK-ROUNDS (- deps rank ))
+                              (/ (at 'current-level merkle-data) 3)))`)
+  }
+
   compute_deposit_data(bip39_phrase, password)
   {
     if (! validateMnemonic(bip39_phrase))
