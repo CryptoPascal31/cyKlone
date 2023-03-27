@@ -65,9 +65,12 @@ class CyKloneTree
       tree_size = this.tree.elements.length
     }
     console.log("Update complete")
-    //save_merkle_tree()
   }
 
+  dump()
+  {
+    return JSON.stringify(this.tree.serialize())
+  }
 
 }
 
