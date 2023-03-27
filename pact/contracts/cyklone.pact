@@ -1,5 +1,5 @@
 (module cyKlone-v0-10 GOVERNANCE
-  (defconst VERSION:string "0.2")
+  (defconst VERSION:string "0.21")
 
   (use free.util-math [xEy])
   (use free.util-lists [remove-first append-last first replace-at])
@@ -264,12 +264,12 @@
 
   ; -------------------------- LOCAL FUNCTIONS ---------------------------------
   ;-----------------------------------------------------------------------------
-  (defun get-state ()
+  (defun get-state:object{global-state-schema} ()
     @doc "Return the current state of the contract"
     (read global-state "")
   )
 
-  (defun get-deposits-range (rank-min:integer rank-max:integer)
+  (defun get-deposits-range:[string] (rank-min:integer rank-max:integer)
     @doc "Return all deposits in a rank range. A sorted list is returned, starting by rank-min"
     (let ((filter-func (lambda (k obj) (where 'rank (and? (<= rank-min) (>= rank-max)) obj)))
           (map-func (lambda (k obj) {'i:(at 'rank obj), 'v:k})))
