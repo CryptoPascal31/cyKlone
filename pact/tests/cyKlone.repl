@@ -120,3 +120,15 @@
 (env-gas 0)
 (withdraw "bob"  "L4pq5fBb-e40V9INX3QwpjywLS4aI_sNqvmX9VM8Ay8" "BanKWum1N0IdsuMGHga3fIplSdZsnMYXI4ZTaJwQqXo" "Cx0PUAiRTqrEXFcdoqfOLQ-qQpxWTNzEzNfutbfLIVMAKO5TF94TSqKMLmcwqyUUNBMXkFKKAJQAL3Op9_NkGEBCgSf3SByd6n8WAG9UX-pJ1bsSztclzKyLc3C45p31kEOOh8U2YiYhObnw4LcXMv_-gI-mr8OI5_QIwM0MvAlgIFtG_UP5nT782KaXoxcXcZufnxXdB2gM5DDKOhNcl5gI_gZqcizE2RzctXVoBZdqlbkoMKwQWrt4IzGKegslq4KDAs72NOLQYLvpsLbhlUhCK1EpPidzVqkkwF9V146sIGi6kb5YjkxTsJ2Do5RMPAHeBs2LBmpv_C6DEYp2ziQk")
 (print (env-gas))
+(commit-tx)
+
+
+; Test local functions
+(begin-tx)
+(use free.cyKlone-v0-10)
+(expect "Deposit rank of the second deposit" 1 (get-deposit-rank "F7YrjTInreRID-_59JyBT6a2FPFXuqZlozI_o7D7uDY"))
+(expect "Deposit rank of a bad deposit" -1 (get-deposit-rank "Bad___deposit"))
+
+(expect "Withdrawal OK" true (get-nullifier-state "L4pq5fBb-e40V9INX3QwpjywLS4aI_sNqvmX9VM8Ay8"))
+(expect "Withdrawal NOK" false (get-nullifier-state "Bad__nullifer"))
+(commit-tx)

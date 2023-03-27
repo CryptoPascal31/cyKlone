@@ -1,5 +1,5 @@
 (module cyKlone-v0-10 GOVERNANCE
-  (defconst VERSION:string "0.21")
+  (defconst VERSION:string "0.22")
 
   (use free.util-math [xEy])
   (use free.util-lists [remove-first append-last first replace-at])
@@ -275,6 +275,18 @@
           (map-func (lambda (k obj) {'i:(at 'rank obj), 'v:k})))
 
       (map (at 'v ) (sort ['i] (fold-db deposits filter-func map-func))))
+  )
+
+  (defun get-deposit-rank:integer (commitment:string)
+    @doc "Return the rank of a commitment, Returns -1 if the commitment is not found"
+    (with-default-read deposits commitment {'rank:-1} {'rank:=rank}
+      rank)
+  )
+
+  (defun get-nullifier-state:bool (nullifier-hash:string)
+    @doc "Return true if a nullifier has already been withdrawn, false otherwise"
+    (with-default-read nullifiers nullifier-hash {'withdrawn:false} {'withdrawn:=state}
+      state)
   )
 
 )
