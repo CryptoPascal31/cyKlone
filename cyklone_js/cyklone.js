@@ -19,10 +19,14 @@ class CyKlone
     this.circuit_commit_hasher = null;
     this.circuit_withdraw = null;
     this.proving_key = null;
+    this.already_init = false;
   }
 
   async init()
   {
+    if(this.already_init)
+      return;
+
     console.log("Initializing")
     const [zok, cm, cw, pk ] = await Promise.all([zok_init(),
                                                  this.resource_loader("zkp/commitment_hasher.out").then((x) => Uint8Array.from(x)),
@@ -33,6 +37,7 @@ class CyKlone
     this.circuit_commit_hasher = cm;
     this.circuit_withdraw = cw;
     this.proving_key = pk;
+    this.already_init = true
   }
 
   /* --------------- KADENA Local Call Methods ------------------------*/
