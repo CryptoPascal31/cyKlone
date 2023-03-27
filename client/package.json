@@ -2,18 +2,14 @@
   "name": "client",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "license": "MIT",
   "dependencies": {
-    "@iden3/js-merkletree": "https://github.com/iden3/js-merkletree.git",
     "@kadena/client": "^0.1.10",
-    "@kadena/cryptography-utils": "^0.1.4",
-    "@kadena/pactjs": "^0.1.4",
     "bip39": "^3.1.0",
-    "chalk": "4.1.2",
-    "circomlibjs": "^0.1.7",
-    "fixed-merkle-tree": "https://github.com/tornadocash/fixed-merkle-tree",
-    "inquirer": "^8.0.0",
-    "yaml": "^2.2.1",
-    "zokrates-js": "^1.1.5"
+    "chalk": "^5.2.0",
+    "cyklone_js": "file:../cyklone_js",
+    "inquirer": "^9.1.5",
+    "yaml": "^2.2.1"
   }
 }
