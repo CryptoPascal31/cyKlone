@@ -45,5 +45,4 @@ TL;DR: **A lot**
 
   - Improve contract to handle several denominations.
   - Add more tests.
-  - Rewrite the JS client by breaking into one or more libraries.
   - Organize a safe setup for the ZK keys.
