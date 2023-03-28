@@ -51,7 +51,7 @@ Compilation (unsafe only for tests):
 make all
 ```
 
-Deployement: (copy for use by the clients or smart-contract):
+Deployment: (copy for use by the clients or smart-contract):
 ```shell
 make deploy
 ```
