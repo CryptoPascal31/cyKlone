@@ -1,0 +1,13 @@
+{
+  "name": "gen_test_vectors",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "gen-tests": "node index.js"
+  },
+  "dependencies": {
+    "cyklone_js": "file:../cyklone_js"
+  }
+}
