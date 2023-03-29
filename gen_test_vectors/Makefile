@@ -12,4 +12,4 @@ test-vectors.pact: index.js
 clean:
 	rm -rf node_modules
 	rm -f merkle_tree.json
-	rm -r test-vectors.pact
+	rm -f test-vectors.pact
