@@ -63,7 +63,7 @@ class CyKlone
     return this.kadena_local(`(use ${MODULE})
                               (bind (get-state) {'deposit-count:=deps, 'current-rank:=rank, 'merkle-tree-data:=merkle-data}
                               (- (* WORK-ROUNDS (- deps rank ))
-                              (/ (at 'current-level merkle-data) 3)))`)
+                              (/ (at 'current-level merkle-data) COMPUTED-LEVELS-PER-ROUND)))`)
   }
 
   compute_deposit_data(bip39_phrase, password)
