@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: MIT
 import "hashes/pedersen/512bitBool" as pedersen_hash;
 import "utils/pack/bool/unpack256" as unpacker;
 import "utils/pack/bool/pack256" as packer;
 
+/* This circuit is in charge of hashing the nullifier.
+   The Nullifier is 256 bits. It is concatenated to 256 0s,
+   and hashed using the Pedersen algorithm */
 
 def main(field nullifier) -> field {
   bool[256] nullifier_bits = unpacker(nullifier);

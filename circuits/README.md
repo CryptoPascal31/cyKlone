@@ -3,42 +3,50 @@
 This directory contains the ZK circuits, developed in ZoKrates language.
 
 ## Circuits
+
 ```
-                       ┌───────────────────┐
-                       │  nullifier_hasher │
-                       │                   │
-                       │   ( Pedersen )    │
-                       │                   │
-                       └──────────▲─────┬──┘
-                                  │     │
-                       ┌──────────┼─────┼───────────────────────────────────────┐
-                       │          │     │                                       │
-                       │          │     │                                       │
-account_hash ─────────►│          │     └───────────────────────────────────────┼───►  nullifier_hash
-                       │          │                                             │
-                       │          │                                             │
-merkle_path[]─────────►├──────────┼───────────────────────────────┐             │
-                       │          │                               │             │
-                       │          │                               │             │
-merkle_indices ───────►├──────────┼───────────────────────────┐   │             │
-                       │          │       withdraw            │   │             │
-                       │          │                           │   │             │
-nullifier─────────────►├──────────┤                           │   │             │
-                       │          │      ┌────────────┐       │   │         ┌───┼────►  merkle_root
-                       │          │      │            │       │   │         │   │
-secret ───────────────►├─────┐    │      │            │       │   │         │   │
-                       │     │    │      │            │       │   │         │   │
-                       └─────┼────┼──────┼────────────┼───────┼───┼─────────┼───┘
-                             │    │      │            │       │   │         │
-                       ┌─────▼────▼──────┴───┐   ┌────▼───────▼───▼─────────┴───┐
-                       │                     │   │                              │
-                       │   commitment_hasher │   │        merkle_tree           │
-                       │                     │   │                              │
-                       │      ( Pedersen )   │   │        ( Poseidon )          │
-                       │                     │   │                              │
-                       └─────────────────────┘   └──────────────────────────────┘
+                                  ┌───────────────────┐
+                                  │  nullifier_hasher │
+                                  │                   │
+                                  │   ( Pedersen )    │
+                                  │                   │
+                                  └──────────▲─────┬──┘
+                                             │     │
+                                  ┌──────────┼─────┼───────────────────────────────────────┐
+                                  │          │     │                                       │
+                                  │          │     │                                       │
+PUBLIC >|  account_hash ─────────►│          │     └───────────────────────────────────────┼───►  nullifier_hash
+                                  │          │                                             │
+        ┌──                       │          │                                             │
+        │  merkle_path[]─────────►├──────────┼───────────────────────────────┐             │
+        │                         │          │                               │             │
+        │                         │          │                               │             │
+        │  merkle_indices ───────►├──────────┼───────────────────────────┐   │             │
+SECRET >│                         │          │       withdraw            │   │             │
+        │                         │          │                           │   │             │
+        │  nullifier─────────────►├──────────┤                           │   │             │
+        │                         │          │      ┌────────────┐       │   │         ┌───┼────►  merkle_root
+        │                         │          │      │            │       │   │         │   │
+        │  secret ───────────────►├─────┐    │      │            │       │   │         │   │
+        └──                       │     │    │      │            │       │   │         │   │
+                                  └─────┼────┼──────┼────────────┼───────┼───┼─────────┼───┘
+                                        │    │      │            │       │   │         │
+                                  ┌─────▼────▼──────┴───┐   ┌────▼───────▼───▼─────────┴───┐
+                                  │                     │   │                              │
+                                  │   commitment_hasher │   │        merkle_tree           │
+                                  │                     │   │                              │
+                                  │      ( Pedersen )   │   │        ( Poseidon )          │
+                                  │                     │   │                              │
+                                  └─────────────────────┘   └──────────────────────────────┘
 ```
-[link](https://asciiflow.com/#/share/eJzVV0tOwzAQvYrlFUhdIdRCTsEeo8pKBsUisZHjqq2q3gLlICwrTsNJCBBVpbFjTz4ErFk4jv3mzfOMZe%2Bo5DnQSK6ybEYzvgVNI7pjdMNodHu9mDG6rXpXN%2FOqZ2Bjqg9Gib29v7z1McakG5iQT4riUYBeprxIQRP%2FEtuob8kFuYMEdAGSXAYuwXrxWPnaSSQLrZ5E%2FpIF7sFJ5H6ZgjTqj83jWK2k%2BUrbVtXLg8vf9FYezisQqVpow%2B8HDjkH%2FZTB8pmb9P7BuxuT22ja%2FD52rbyQiYihcKT1dKoPpMlamDTRfN2cOpbibejHkg3VIUz%2FjmxQsaJrpOm5PVBC6ozUSpkO7OyTrCyOChQQazDII92xJ0Pw8cQ8upd%2FZL6bVz%2BtUCqdJURAzVpwXKtOxzGnMfaW7DoqbNN82LHKc2FyqG9Z34%2BDn9h1rRsNgMMekzdpvDca2NV%2FVYBIVP0emZ53fxsKpy0b6Z7uPwAvw3XE))
+
+[link](https://asciiflow.com/#/share/eJzNV0tOwzAQvYrlFUhdgYSgiy6oukCwqPisCKoiZ1AsEhs5rtqq9BaoB2FZcRpOQoBQtY2d2LHV1JpFYnv8Zt7zd45ZmALuYjK7TjgDRKggYypxByfhDETeMg%2FwNMDdi9OzToBn%2BdfJ%2Bc%2BXhKnMfwKMasvX%2B6eLBQEzwkCIjZOEPlMQozjMYhDIyltVa%2BF9hIYQgciAoWN7bwfsGlt%2BuHKrCNZfeIdk9npt8GHO4P5ghg%2BXN1d91HtDKCSEj5n8XRmVsixXOuj2bbnaXeTNuTQt24KtY9kLFEIpiJcERq%2BhjB%2BfamVr3erS8cPaIQEVAlEWUQKZZpm0J442ibtB%2F3Zwj3oN2JpQGUcinJS77kUYY6j1TmFKl5lMPkKzYsF6%2BZXDqM56PYsF59I1VHUnZUhqbjIgAqTlgaORznNwlRPgv8UzrL7YMdS2WVw13Rhsyt3OFDLYDBTj6Lw2621OA4cnhG47UnWzgCE8TalMobhL%2Fr2ytmGK3UQKgMYwunrP2aDSw60Ek7fzDGjEi4ddQxhlvc9s3M3XOFXzGS%2Fw4htgoctQ)
+
+## Notes
+
+Only the nullifier hash is transmitted to the smart contract. I believe that hashing the nullifier is not necessary from a security point of view. However, Tornado Cash is doing the same thing. In case, I'm missing something I prefer to do it as well.
+
+The account is hashed (Blake2) by the client in JS, and then by the smart contract during verification. This is necessary, because in Kadena there is no constraint on the account length:  opposite to Ethereum where an account can only be a 256 bits pubKey. A hash allow to pack the account name to 256 bits.
 
 ## Compilation
 

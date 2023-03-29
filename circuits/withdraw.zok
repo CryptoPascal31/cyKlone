@@ -1,9 +1,17 @@
+// SPDX-License-Identifier: MIT
 import "./commitment_hasher" as com_hasher;
 import "./nullifier_hasher" as nul_hasher;
 from "./merkle_tree" import compute_merkle_root;
 
-
 const u32 TREE_LEVELS = 18;
+
+ /* Main circuit for withdrawal. It does the following:
+    - Recompute the commitment from the Secret and the Nullifier
+    - Compute the root of the Merkle tree => Output
+    - Compute the hash of the Nullifier => Output
+    - And of course, prove that the above calculation is correct.
+    - Take into account in the calculation the hash of the destination account. (prevent frontrunning)
+*/
 
 def main(public field account_hash, private field secret, private field nullifier, private field[TREE_LEVELS] path, private u32 indices) -> field[2] {
 

@@ -1,17 +1,32 @@
+// SPDX-License-Identifier: MIT
 import "hashes/poseidon/poseidon" as poseidon;
 import "utils/casts/u32_to_bits";
 
+/* This circuit compute the root of a Poseidon Merkle tree.
+   The inputs are:
+      - The leaf to proof (256 bits)
+      - The list of adjacent hash nodes (N x 256 bits): one for each level
+      - A 32 bits integer where each bit represents a level of the tree:
+            - 0 we come from left
+            - 1 we come from right
 
+    The circuit output is the root of the Merkle teee.
+*/
+
+/* Sum and hash to children nodes, reordering the depending on the direction (bool) */
 def hash_level(field l, field r, bool direction) -> field {
   field[2] inputs = direction ? [r,l] : [l,r];
   return poseidon(inputs);
 }
 
+/* Unpack the 32 bits integer indices rto an array of bits */
 def unpack_indices<N>(u32 input) -> bool[N] {
   bool[32] b_input = u32_to_bits(input);
   return b_input[0..N];
 }
 
+
+/* Main function to compute the Merkle root */
 def compute_merkle_root<N>(field leaf, field[N] path, u32 indices) -> field {
   bool[N] b_indices = unpack_indices(indices);
 
