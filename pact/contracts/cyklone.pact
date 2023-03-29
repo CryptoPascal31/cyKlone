@@ -1,5 +1,5 @@
 (module cyKlone-v0-10 GOVERNANCE
-  (defconst VERSION:string "0.22")
+  (defconst VERSION:string "0.23")
 
   (use free.util-math [xEy])
   (use free.util-lists [remove-first append-last first replace-at])
@@ -10,22 +10,38 @@
 
   (defcap GOVERNANCE () (enforce-keyset "free.cyKlone-test-ks"))
 
-  (defconst MERKLE-TREE-DEPTH:integer 18)
 
-  (defconst MAXIMUM-DEPOSITS (^ 2 MERKLE-TREE-DEPTH))
-
+  ; -------------------------- CONSTANTS ---------------------------------------
+  ;-----------------------------------------------------------------------------
+  ; Denomitation of the Contract (ie Deposit amount)
   (defconst DENOMINATION:decimal 10.0)
 
-  (defconst WORK-ROUNDS:integer 6)
+  ; Total height of the Merkle tree
+  (defconst MERKLE-TREE-DEPTH:integer 18)
 
+  ; Number of levels of the Merkle tree computed per round of work
+  (defconst COMPUTED-LEVELS-PER-ROUND:integer 3)
+
+  ; Number of work rounds needed for complete (ie root) computation
+  (defconst WORK-ROUNDS:integer (/ MERKLE-TREE-DEPTH COMPUTED-LEVELS-PER-ROUND))
+
+  ; Maximum number of allowed deposits => After the contract is dead
+  (defconst MAXIMUM-DEPOSITS (^ 2 MERKLE-TREE-DEPTH))
+
+  ; The maximum cost of a round of computation
   (defconst WORK-GAS:integer 120000)
 
+  ; Total Fees to be transfered for pre-payment to the gas station
+  ; = Number of Rounds * Round Cost * Gas Price
   (defconst FEES:decimal (xEy (* 1.0 (* WORK-ROUNDS WORK-GAS)) -8))
 
+  ; Withdrawable amount
+  ;  = Denomination - Fees
   (defconst WITHDRAW-AMOUNT:decimal (- DENOMINATION FEES))
 
 
-
+  ; -------------------------- DATA AND TABLES ---------------------------------
+  ;-----------------------------------------------------------------------------
   (defschema merkle-data-schema
     @doc "Current state of the Merkle tree calculation"
     subtrees:[integer] ;The hash of the nodes (on for each level) of the completed subtrees from left
@@ -34,6 +50,7 @@
   )
 
   (defschema global-state-schema
+    @doc "Global state of the contract => Only one instance is stored"
     deposit-count:integer ;The total of deposit already made (including thoses in queue)
     current-rank:integer ; The rank of the next deposit. The rank is updated once a deposit has been fully computed
     withdrawal-count:integer ; The total number of withdrawals already made
@@ -43,10 +60,12 @@
   )
 
   (defschema nullifier-schema
+    @doc "Store an already withrawn nullfier"
     withdrawn:bool
   )
 
   (defschema deposit-schema
+    @doc "Store a deposit: ie a Merkle leaf"
     rank:integer
   )
 
@@ -56,13 +75,44 @@
 
   (deftable deposits:{deposit-schema})
 
+
+  ; -------------------------- INTERNAL CAPABILITIES ---------------------------
+  ;-----------------------------------------------------------------------------
+  ; Lock the reserve account
   (defcap RESERVE-SPEND () true)
 
+  ; Prevent internal functions to be called out of the (work) function
   (defcap DO-WORK () true)
 
+  ; Secondary capability acquired during a withdrawal => Unlock RESERVE-SPEND
   (defcap WITHDRAWAL ()
     (compose-capability (RESERVE-SPEND)))
 
+  ; Secondary capability acquired during a de deposit when fuunding the gas
+  ; station  => Unlock RESERVE-SPEND
+  (defcap FUND-GAS-STATION ()
+    (compose-capability (RESERVE-SPEND)))
+
+
+  ; -------------------------- ACCOUNTS MANAGEMNT ------------------------------
+  ;-----------------------------------------------------------------------------
+  ; Guard to locking the reserve
+  (defconst RESERVE-GUARD:guard (create-capability-guard (RESERVE-SPEND)))
+
+  ; Reserve account name
+  (defconst RESERVE:string (create-principal RESERVE-GUARD))
+
+  ; Gas station to be funded for future gas spending during (work) calls
+  (defconst WORK-GAS-STATION:string "cyKlone-work-gas")
+
+
+  ; -------------------------- UTILITIES ---------------------------------------
+  ;-----------------------------------------------------------------------------
+  ; Pre-computed zeros of the Merkle tree
+  ; ZEROS[0] is arbitrary chosen: modulo(BLAKE2S("cyKone"), P)
+  ; ZEROS[1] = Poseidon (ZEROS[0], ZEROS[0])
+  ; ...
+  ; ZEROS[n] = Poseidon (ZEROS[n-1], ZEROS[n-1])
   (defconst ZEROS:[integer] [8355858611563045677440680357889341193906656246723581940305640971585549179022
                              14460290186982602856845142894824532904406068204758455493958564390328669703592
                              784645075456309464693580835304608741452170192947706750712048461654063101236
@@ -82,34 +132,38 @@
                              10162988321396705654057952610856417257234322789259805626437123361975652985685
                              15643591565536582692944226866997970792772779983528038950689066322189000603708])
 
-  (defconst RESERVE-GUARD:guard (create-capability-guard (RESERVE-SPEND)))
-
-  (defconst RESERVE:string (create-principal RESERVE-GUARD))
-
-  (defconst WORK-GAS-STATION:string "cyKlone-work-gas")
-
   (defun ++:integer (x:integer)
+    @doc "Increment an integer"
     (+ 1 x))
 
   (defun --:integer (x:integer)
-      (- x 1))
+    @doc "Decrement an integer"
+    (- x 1))
 
   (defun as-string:string (x:integer)
+    @doc "Convert a base64 string to a 256 bits integer "
     (int-to-str 64 x))
 
   (defun as-int:integer (x:string)
+    @doc "Convert a 256 bits integer to a base64 string"
     (str-to-int 64 x))
 
   (defun hash-bn128:integer (x:string)
+    @doc "Hash (blake2) a string and outputs the result to a 256 bits integer modulo P"
     (mod (as-int (hash x)) BN128-GROUP-MODULUS))
 
   (defun is-bit-set:bool (x:integer position:integer)
+    @doc "Return true if the bit at position is set"
     (!= 0 (& (shift 1 position) x)))
 
-
+  ; -------------------------- ADMINISTRATIVE FUNCTIONS-------------------------
+  ;-----------------------------------------------------------------------------
   (defun init ()
+    @doc "Init the module => Must be called once"
     (with-capability (GOVERNANCE)
+      ; Create the Reserve account
       (coin.create-account RESERVE RESERVE-GUARD)
+      ; Create the global state entry with default values
       (insert global-state ""
         {'deposit-count:0,
          'current-rank:0,
@@ -120,15 +174,16 @@
   )
 
 
+  ; -------------------------- WORK FUNCTIONS ----------------------------------
+  ;-----------------------------------------------------------------------------
   (defun has-work:bool ()
+    @doc "Return True if the contract needs for (work) being called"
     (with-read global-state "" {'deposit-queue:=deposit-queue, 'merkle-tree-data:=merkle-state}
-      (or?  (> (length deposit-queue))
-            (> (at 'current-level merkle-state))
+      (or?  (> (length deposit-queue)) ;If there are some stuffs in deposit queue => work is needed
+            (> (at 'current-level merkle-state)) ;If current-level is not null, it means that a deposit is ongoing
             0))
   )
 
-  ; -------------------------- WORK FUNCTIONS ----------------------------------
-  ;-----------------------------------------------------------------------------
   (defun hash-level:object{merkle-data-schema} (rank:integer tree-data:object{merkle-data-schema})
     @doc "Compute a level of the Merkle tree"
     ; This algorithm is an exact copycat of Tornado Cash
@@ -181,7 +236,6 @@
         (+ {'current-level:0} in)))
   )
 
-
   (defun do-step ()
     @doc "Do a step of work"
     (require-capability (DO-WORK))
@@ -202,6 +256,7 @@
   )
 
   (defun work ()
+    @doc "Main public function to be called to trigger work"
     (let ((x (has-work)))
       (enforce x "There is no work"))
     (with-capability (DO-WORK)
@@ -209,7 +264,11 @@
   )
 
 
+  ; -------------------------- DEPOSIT FUNCTIONS -------------------------------
+  ;-----------------------------------------------------------------------------
   (defun deposit (src-account:string commitment:string)
+    @doc "Public function to be called to do a deposit \
+         \ The TRANSFER capability has to be set"
     (with-read global-state "" {'deposit-count:=count, 'deposit-queue:=queue}
       ; Check that the maximum deposits count hasn't be reached
       (enforce (< count MAXIMUM-DEPOSITS) "Deposits limit reached")
@@ -223,16 +282,19 @@
       (coin.transfer-create src-account RESERVE RESERVE-GUARD DENOMINATION)
 
       ; Transfer one part to the gas station for future work
-      (with-capability (RESERVE-SPEND)
+      (with-capability (FUND-GAS-STATION)
         (install-capability (coin.TRANSFER RESERVE WORK-GAS-STATION 10.0))
         (coin.transfer RESERVE WORK-GAS-STATION FEES))
+      ; Update the data
       (update global-state ""
-              {'deposit-count: (++ count),
-               'deposit-queue: (append-last queue (as-int commitment))
+              {'deposit-count: (++ count), ; Increment the deposit count
+               'deposit-queue: (append-last queue (as-int commitment)) ;Append the deposit into the queue
               }))
   )
 
 
+  ; -------------------------- WITHDRAW FUNCTIONS ------------------------------
+  ;-----------------------------------------------------------------------------
   (defun enforce-withdraw (dst-account:string nullifier-hash:string root:string proof:string)
     @doc "Internal function only, do all common check to be sure that the withdrawal is legit \
        \  + Increment withdrawals counter"
@@ -259,6 +321,7 @@
   )
 
   (defun withdraw-create (dst-account:string dst-guard:guard nullifier-hash:string root:string proof:string)
+    @doc "Public function to do a withdrawal using internally (coin.transfer-create)"
     (with-capability (WITHDRAWAL)
       (enforce-withdraw dst-account nullifier-hash root proof)
       (install-capability (coin.TRANSFER RESERVE dst-account WITHDRAW-AMOUNT))
@@ -267,6 +330,7 @@
   )
 
   (defun withdraw (dst-account:string nullifier-hash:string root:string proof:string)
+    @doc "Public function to do a withdrawal using internally (coin.transfer)"
     (with-capability (WITHDRAWAL)
       (enforce-withdraw dst-account nullifier-hash root proof)
       (install-capability (coin.TRANSFER RESERVE dst-account WITHDRAW-AMOUNT))
@@ -300,5 +364,4 @@
     (with-default-read nullifiers nullifier-hash {'withdrawn:false} {'withdrawn:=state}
       state)
   )
-
 )
