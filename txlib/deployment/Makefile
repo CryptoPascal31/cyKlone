@@ -1,6 +1,8 @@
 #MACROS=-DNAMESPACE=free -DINIT
 MACROS=-DNAMESPACE=free
 DATA_FILE=testnet_data.yaml
+KEY_A=../../keys/80c.yaml
+KEY_B=../../keys/e37.yaml
 
 all: cyklone.json cyklone-work-gas-station.json cyklone-relay.json poseidon.json poseidon-constants.json
 
@@ -11,8 +13,8 @@ all: cyklone.json cyklone-work-gas-station.json cyklone-relay.json poseidon.json
 	kda gen -t $*.tkpl -d ${DATA_FILE} -o $@
 
 %.json: %.yaml
-	kda sign $< -k ../../keys/80c.yaml
-	kda sign $< -k ../../keys/e37.yaml
+	test -f ${KEY_A} && kda sign $< -k ${KEY_A} || true
+	test -f ${KEY_B} && kda sign $< -k ${KEY_B} || true
 
 clean:
 	rm -f .*.pact
