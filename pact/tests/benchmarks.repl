@@ -1,0 +1,96 @@
+(load "../kadena_repl_sandbox/kda-env/init.repl")
+
+;; Define the governance keyset
+(begin-tx)
+(namespace 'free)
+(env-data {'ks:["governance-key"]})
+(env-keys ["governance-key"] )
+(define-keyset "free.cyKlone-test-ks" (read-keyset 'ks))
+(commit-tx)
+
+;; Load Poseidon contracts
+(begin-tx)
+(namespace 'free)
+(load "../pact-zk-hashes/pact/contracts/poseidon-constants.pact")
+(load "../pact-zk-hashes/pact/contracts/poseidon.pact")
+(commit-tx)
+
+;; Load cyKlone
+(begin-tx)
+(env-keys ["governance-key"] )
+(namespace 'free)
+(load "../contracts/cyklone-withdraw-verifier-v0.pact")
+(load "../contracts/cyklone.pact")
+(create-table global-state)
+(create-table nullifiers)
+(create-table deposits)
+(init)
+(coin.create-account WORK-GAS-STATION basic-guards.GUARD_SUCCESS)
+(commit-tx)
+
+;; Load the relay contract
+(begin-tx)
+(namespace 'free)
+(load "../contracts/cyklone-relay.pact")
+(init)
+(commit-tx)
+
+;; Load test vectors in the root namespace
+(begin-tx)
+(load "test-vectors.pact")
+(commit-tx)
+
+(env-gasmodel "table")
+(env-gaslimit 1000000000)
+
+(print "--------------------------------------------------------------------")
+(print "                       BENCHMARKS                                   ")
+(print "--------------------------------------------------------------------")
+(begin-tx)
+(use free.cyKlone-v0-10)
+(use test-vectors)
+
+;Do the deposit
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE DENOMINATION)]}])
+
+(env-gas 0)
+(deposit "alice" DEPOSIT_0)
+(print (format "Deposit Gas:        {}" [(env-gas)]))
+
+(env-gas 0)
+(work)
+(print (format "First work step:    {}" [(env-gas)]))
+
+(work)
+
+(env-gas 0)
+(work)
+(print (format "Inner work step:    {}" [(env-gas)]))
+
+(work)
+
+(work)
+
+(env-gas 0)
+(work)
+(print (format "Last work step:     {}" [(env-gas)]))
+(commit-tx)
+
+(begin-tx)
+(use free.cyKlone-v0-10)
+(use test-vectors)
+
+(env-gas 0)
+(withdraw "bob" WITHDRAW_0_0_NULL WITHDRAW_0_0_ROOT WITHDRAW_0_0_PROOF)
+(print (format "Standard withdrawal:{}" [(env-gas)]))
+(rollback-tx)
+
+(begin-tx)
+(use free.cyKlone-relay-v0)
+(use test-vectors)
+(env-data {'ks:["bob-key"]})
+(env-gas 0)
+(withdraw-create-relay "bob" (read-keyset 'ks) WITHDRAW_RELAY_0_0_NULL WITHDRAW_RELAY_0_0_ROOT WITHDRAW_RELAY_0_0_PROOF)
+(print (format "Relay withdrawal:   {}" [(env-gas)]))
+(print "--------------------------------------------------------------------")
+(commit-tx)

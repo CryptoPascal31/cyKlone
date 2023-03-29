@@ -1,4 +1,6 @@
 client/node_modules/*
+gen_test_vectors/node_modules/*
+gen_test_vectors/test-vectors.pact
 cyklone_js/node_modules/*
 .pact-history
 .pact_zk_state

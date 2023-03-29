@@ -1,14 +1,6 @@
 (load "../kadena_repl_sandbox/kda-env/init.repl")
 
-(env-gasmodel "table")
-(env-gaslimit 1000000000000)
-
-(begin-tx)
-(namespace 'free)
-(load "../pact-zk-hashes/pact/contracts/poseidon-constants.pact")
-(load "../pact-zk-hashes/pact/contracts/poseidon.pact")
-(commit-tx)
-
+;; Define the governance keyset
 (begin-tx)
 (namespace 'free)
 (env-data {'ks:["governance-key"]})
@@ -16,7 +8,14 @@
 (define-keyset "free.cyKlone-test-ks" (read-keyset 'ks))
 (commit-tx)
 
+;; Load Poseidon contracts
+(begin-tx)
+(namespace 'free)
+(load "../pact-zk-hashes/pact/contracts/poseidon-constants.pact")
+(load "../pact-zk-hashes/pact/contracts/poseidon.pact")
+(commit-tx)
 
+;; Load the cyKlone contract
 (begin-tx)
 (env-keys ["governance-key"] )
 (namespace 'free)
@@ -27,29 +26,30 @@
 (create-table deposits)
 (init)
 (coin.create-account WORK-GAS-STATION basic-guards.GUARD_SUCCESS)
+(commit-tx)
 
-(env-gas 0)
+;; Load the relay contract
+(begin-tx)
+(namespace 'free)
 (load "../contracts/cyklone-relay.pact")
 (init)
-(print (env-gas))
 (commit-tx)
 
-(env-gasmodel "table")
-(env-gaslimit 1000000000000)
+;; Load test vectors in the root namespace
+(begin-tx)
+(load "test-vectors.pact")
+(commit-tx)
 
 
+;;; ----------------------- DEPOSIT ----------------------------------------
 (begin-tx)
 (use free.cyKlone-v0-10)
-; Mnemonic: unique turn medal ozone power change ghost pudding sauce drastic code fat
-; Commitment: KGPytNCSi1JSWJdlXqdOVrAv4fTe-hAa5PGNmXmatrU
-(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 1000.0)]}])
-(deposit "alice" "KGPytNCSi1JSWJdlXqdOVrAv4fTe-hAa5PGNmXmatrU")
+(use test-vectors)
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE DENOMINATION)]}])
+(deposit "alice" DEPOSIT_0)
 (commit-tx)
 
-
-
-
-
+;;; ----------------------- PROCESS 0DEPOSIT -----------------------------------
 (begin-tx)
 (use free.cyKlone-v0-10)
 (work)
@@ -60,16 +60,57 @@
 (work)
 (commit-tx)
 
-
-(begin-tx)
-(use free.cyKlone-v0-10)
-(print (has-work))
-(print (get-state))
-(print (get-deposits-range 0 10))
-(commit-tx)
-
+;;; ----------------------- WITHDRAWAL WITH RELAY ------------------------------
 (begin-tx)
 (use free.cyKlone-relay-v0)
+(use test-vectors)
 (env-data {'ks:["bob-key"]})
-(print (relayer-account "bob"))
-(withdraw-create-relay "bob"  (read-keyset 'ks) "L4pq5fBb-e40V9INX3QwpjywLS4aI_sNqvmX9VM8Ay8" "HdnUXE9Z2dNE4MbEiRaclknC1SoAH7_y3oaN5pJh04s" "BzETrCGGKDKNUdWYAVn_f7DbfmAO9_WWtjQenI9P6EkApYJbgitOIISeKQrkDjMUzkzF2Jz5gY7d7C3Sdm9cYsIvpgKGF5gEoWgwdo-nDbtD9y37AaUBxbEpB6N6jN1JALj6bLV3u1iS7zcwuMdDqx2SuJSr2ja3k_zl6OAX_a54Kqvizj-Ka2pa1rpNxWHfAYJBZTxVnOGkhMGVAhu_lWkIUNXQiisr2sLc7C8HX9AVN51Z5ZI2PsHTT8xZVferiAC1TNDyRrgGhy9Eno9N4SoWQFjxD4zRt9uqu31NX5T_YEHj0BJBDSggEUCysERw8_ajiEjmBYfaUGr8-a9gsvmc")
+(print (format "Relayer account:{} -> {}" ["bob" (relayer-account "bob")]))
+(print (format "Total GAS: {}" [TOTAL-GAS]))
+(withdraw-create-relay "bob" (read-keyset 'ks) WITHDRAW_RELAY_0_0_NULL WITHDRAW_RELAY_0_0_ROOT WITHDRAW_RELAY_0_0_PROOF)
+(expect-that "Balance after withdraw" (< 1009.0) (coin.get-balance "bob"))
+(expect-that "Balance of gas station" (<= TOTAL-GAS) (coin.get-balance (gas-payer-account)))
+(commit-tx)
+
+
+; --------------------------- TEST GAS STATION ---------------------------------
+; Bad Gas limit
+(begin-tx)
+(use free.cyKlone-relay-v0)
+(env-chain-data { "gas-price":  0.00000001, "gas-limit": 36000})
+(env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-relay-v0.withdraw-create-relay \"bob\")" ]})
+
+(test-capability (coin.GAS))
+(expect-failure "Fail bad gas" "Gas" (test-capability (GAS_PAYER "user" 0 0.0)))
+(commit-tx)
+
+;Bad gas price
+(begin-tx)
+(use free.cyKlone-relay-v0)
+(env-chain-data { "gas-price":  0.00000002, "gas-limit": 34000})
+(env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-relay-v0.withdraw-create-relay \"bob\")" ]})
+
+(test-capability (coin.GAS))
+(expect-failure "Fail bad gas" "Gas" (test-capability (GAS_PAYER "user" 0 0.0)))
+(commit-tx)
+
+; Bad code
+(begin-tx)
+(use free.cyKlone-relay-v0)
+(env-chain-data { "gas-price":  0.00000001, "gas-limit": 34000})
+(env-data { "tx-type": "exec", "exec-code": ["(coin.transfer \"alice\" \"bob\" 10.0)" ]})
+
+(test-capability (coin.GAS))
+(expect-failure "Fail bad code" "Code" (test-capability (GAS_PAYER "user" 0 0.0)))
+(commit-tx)
+
+; Everything OK => Should work
+(begin-tx)
+(use free.cyKlone-relay-v0)
+(env-chain-data { "gas-price":  0.00000001, "gas-limit": 34000})
+(env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-relay-v0.withdraw-create-relay \"bob\")" ]})
+
+(test-capability (coin.GAS))
+(test-capability (GAS_PAYER "user" 0 0.0))
+(expect "buy gas succeeds" "Write succeeded" (coin.buy-gas GAS-PAYER-ACCOUNT TOTAL-GAS))
+(commit-tx)

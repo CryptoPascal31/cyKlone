@@ -44,6 +44,10 @@ class CyKloneTree
     return this.kadena_local(`(at 'current-rank (${MODULE}.get-state))`);
   }
 
+  insert_commitments(chunk)
+  {
+    this.tree.bulkInsert(chunk.map(b64_to_dec));
+  }
 
   async update()
   {
@@ -61,7 +65,7 @@ class CyKloneTree
     {
       let chunk = await this.get_deposit_chunk(tree_size, Math.min(tree_size + MAX_DOWNLOAD_LEAF, rank-1));
       console.log(`Updating Progress ${tree_size} => ${tree_size + chunk.length}`)
-      this.tree.bulkInsert(chunk.map(b64_to_dec))
+      this.insert_commitments(chunk)
       tree_size = this.tree.elements.length
     }
     console.log("Update complete")
