@@ -1,14 +1,20 @@
 (module cyKlone-v0-10 GOVERNANCE
   (defconst VERSION:string "0.23")
+  (defconst MODULE-FREEZE-DATE (time "2023-10-30T00:00:00Z"))
 
   (use free.util-math [xEy])
   (use free.util-lists [remove-first append-last first replace-at])
   (use free.util-zk [BN128-GROUP-MODULUS])
+  (use free.util-time [is-future])
 
   (use free.poseidon-hash-v1 [poseidon-hash])
   (use cyklone-withdraw-verifier-v0 [verify])
 
-  (defcap GOVERNANCE () (enforce-keyset "free.cyKlone-test-ks"))
+  (defcap GOVERNANCE ()
+    ; After freeze date the module becomes not upgradable
+    (enforce (is-future MODULE-FREEZE-DATE) "Module is definitively frozen")
+    (enforce-keyset "free.cyKlone-test-ks")
+  )
 
 
   ; -------------------------- CONSTANTS ---------------------------------------
