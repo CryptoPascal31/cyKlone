@@ -81,7 +81,6 @@
 
 (env-chain-data { "gas-price":  0.00000001, "gas-limit": 120000})
 (env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-v0-10.work)"]})
-(print (free.cyKlone-v0-10.has-work))
 (test-capability (coin.GAS))
 (expect-failure "Fail bad code" "No work" (test-capability (GAS_PAYER "user" 1 1.0)))
 (commit-tx)
