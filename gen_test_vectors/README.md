@@ -7,11 +7,11 @@ located in `pact/tests/`
 
 
 To install the dependencies:
-```
+```shell
 make install
 ```
 
 To generate and install the test vectors:
-```
+```shell
 make copy
 ```
