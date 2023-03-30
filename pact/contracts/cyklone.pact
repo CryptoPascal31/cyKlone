@@ -293,7 +293,10 @@
 
       ; Transfer one part to the gas station for future work
       (with-capability (FUND-GAS-STATION)
-        (install-capability (coin.TRANSFER RESERVE WORK-GAS-STATION FEES))
+        ; We install more transfer capability than needed, because it allow
+        ; to make several deposits in the same transaction. This is not 100% clean
+        ; However it should ol as the reseve is protected by the cap guard.
+        (install-capability (coin.TRANSFER RESERVE WORK-GAS-STATION 1.0))
         (coin.transfer RESERVE WORK-GAS-STATION FEES))
       ; Update the data
       (update global-state (get-pool)
