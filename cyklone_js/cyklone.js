@@ -82,7 +82,7 @@ class CyKlone
 
     /* Use the commit_hasher circuit to compute the commitment. This could have
       been done in JS as well. But by using the ZoKrates circuit  we are sure that
-       the commitment is 100 % compatible with the withdrawak circuit */
+       the commitment is 100 % compatible with the withdrawal circuit */
     const { witness, output } = this.zokrates.computeWitness(this.circuit_commit_hasher, [secret, nullifier])
     const commitment = JSON.parse(output)[0]
 
