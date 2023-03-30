@@ -24,7 +24,7 @@
 (create-table global-state)
 (create-table nullifiers)
 (create-table deposits)
-(init)
+(add-pool "10KDA" 10.0)
 (coin.create-account WORK-GAS-STATION basic-guards.GUARD_SUCCESS)
 (commit-tx)
 
@@ -38,35 +38,37 @@
 (module cyKlone-utils G
   (defcap G() true)
   (defun repeat-N-work (n:integer)
-    (let ((_work (lambda (_) (free.cyKlone-v0-10.work))))
+    (let ((_work (lambda (_) (free.cyKlone-v0-multipool.work))))
       (map (_work) (enumerate 1 n))))
 )
 (commit-tx)
 
+(env-data {'pool:"10KDA"})
 ; ------------------------------------------------------------------------------
 ; ------------------------------------------------------------------------------
 ; ------------------------------------------------------------------------------
 ;;; First Alice Deposit
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
+(use free.util-math)
 ; Verify the balance before
 (expect "Balance before deposit" 1000.0 (coin.get-balance "alice"))
 
 ;Do the deposit
-(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE DENOMINATION)]}])
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 11.0)]}])
 (deposit "alice" DEPOSIT_0)
 
 ; Try to deposit 2 times
 (expect-failure "Can't deposit 2 times with the same commitment" "already submitted" (deposit "alice" DEPOSIT_0))
 
 ; Verify the balance after
-(expect "Balance before deposit" 990.0 (coin.get-balance "alice"))
+(expect-that "Balance after deposit" (between 989.0 990.0) (coin.get-balance "alice"))
 (commit-tx)
 
 ; Try to withdraw
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
 (use cyKlone-utils)
 
@@ -74,11 +76,11 @@
 (expect "Balance before withdraw" 1000.0 (coin.get-balance "bob"))
 (expect-failure "Must not work => Deposit not processed" "root unknown" (withdraw "bob" WITHDRAW_0_0_NULL WITHDRAW_0_0_ROOT WITHDRAW_0_0_PROOF))
 
-(expect-that "Deposit count must have been incremented" (compose (at 'deposit-count) (= 1)) (get-state))
+(expect-that "Deposit count must have been incremented" (compose (at 'deposit-count) (= 1)) (get-state "10KDA"))
 
 ; Process te deposit
 (repeat-N-work 6)
-(expect-that "Deposit rank must have been incremented" (compose (at 'current-rank) (= 1)) (get-state))
+(expect-that "Deposit rank must have been incremented" (compose (at 'current-rank) (= 1)) (get-state "10KDA"))
 
 ; There is no work anymore
 (expect-failure "No work anymore" "work" (work))
@@ -96,7 +98,7 @@
 
 ; And finally with everything OK
 (withdraw "bob" WITHDRAW_0_0_NULL WITHDRAW_0_0_ROOT WITHDRAW_0_0_PROOF)
-(expect-that "Balance after withdraw" (< 1009.0) (coin.get-balance "bob"))
+(expect "Balance after withdraw" 1010.0 (coin.get-balance "bob"))
 
 ; Try to withdraw again
 (expect-failure "Double withdraw is porhibited" "already withdrawn" (withdraw "bob" WITHDRAW_0_0_NULL WITHDRAW_0_0_ROOT WITHDRAW_0_0_PROOF))
@@ -105,9 +107,9 @@
 ; Check another time to deposit the same commitment
 ; Because here the commitment is not in queue anymore but should however fail
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
-(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE DENOMINATION)]}])
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 11.0)]}])
 ; Try to deposit 2 times
 (expect-failure "Can't deposit 2 times with the same commitment" "already submitted" (deposit "alice" DEPOSIT_0))
 (commit-tx)
@@ -118,53 +120,56 @@
 ; ------------------------------------------------------------------------------
 ; Deposits 3 times in a row
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
+(use free.util-math)
 ; Verify the balance before
-(expect "Balance before deposit" 990.0 (coin.get-balance "alice"))
-(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE DENOMINATION)]}])
+(expect-that "Balance before deposit" (between 989.0 990.0) (coin.get-balance "alice"))
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 11.0)]}])
 (deposit "alice" DEPOSIT_1)
 
 ; Verify the balance after
-(expect "Balance before deposit" 980.0 (coin.get-balance "alice"))
+(expect-that "Balance after deposit" (between 979.0 980.0) (coin.get-balance "alice"))
 (commit-tx)
 
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
+(use free.util-math)
 ; Verify the balance before
-(expect "Balance before deposit" 980.0 (coin.get-balance "alice"))
-(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE DENOMINATION)]}])
+(expect-that "Balance before deposit" (between 979.0 980.0) (coin.get-balance "alice"))
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 11.0)]}])
 (deposit "alice" DEPOSIT_2)
 
 ; Verify the balance after
-(expect "Balance before deposit" 970.0 (coin.get-balance "alice"))
+(expect-that "Balance after deposit" (between 969.0 970.0) (coin.get-balance "alice"))
 (commit-tx)
 
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
+(use free.util-math)
 ; Verify the balance before
-(expect "Balance before deposit" 970.0 (coin.get-balance "alice"))
-(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE DENOMINATION)]}])
+(expect-that "Balance before deposit" (between 969.0 970.0) (coin.get-balance "alice"))
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 11.0)]}])
 (deposit "alice" DEPOSIT_3)
 
 ; Verify the balance after
-(expect "Balance before deposit" 960.0 (coin.get-balance "alice"))
+(expect-that "Balance after deposit" (between 959.0 960.0) (coin.get-balance "alice"))
 (commit-tx)
 
 
 ; Now Process the deposits
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
 (use cyKlone-utils)
 
-(expect-that "Deposit count must have been incremented to 4" (compose (at 'deposit-count) (= 4)) (get-state))
+(expect-that "Deposit count must have been incremented to 4" (compose (at 'deposit-count) (= 4)) (get-state "10KDA"))
 ; Process te deposit
 (repeat-N-work 18)
 
-(expect-that "Deposit rank must have been incremented" (compose (at 'current-rank) (= 4)) (get-state))
+(expect-that "Deposit rank must have been incremented" (compose (at 'current-rank) (= 4)) (get-state "10KDA"))
 
 ; There is no work anymore
 (expect-failure "No work anymore" "work" (work))
@@ -172,27 +177,27 @@
 
 ; And withdraw in various order using various roots
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
 (use cyKlone-utils)
 (withdraw "bob" WITHDRAW_3_3_NULL WITHDRAW_3_3_ROOT WITHDRAW_3_3_PROOF)
-(expect-that "Balance after withdraw" (< 1019.0) (coin.get-balance "bob"))
+(expect "Balance after withdraw" 1020.0 (coin.get-balance "bob"))
 (commit-tx)
 
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
 (use cyKlone-utils)
 (withdraw "bob" WITHDRAW_2_3_NULL WITHDRAW_2_3_ROOT WITHDRAW_2_3_PROOF)
-(expect-that "Balance after withdraw" (< 1029.0) (coin.get-balance "bob"))
+(expect "Balance after withdraw" 1030.0 (coin.get-balance "bob"))
 (commit-tx)
 
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
 (use cyKlone-utils)
 (withdraw "bob" WITHDRAW_1_3_NULL WITHDRAW_1_3_ROOT WITHDRAW_1_3_PROOF)
-(expect-that "Balance after withdraw" (< 1039.0) (coin.get-balance "bob"))
+(expect "Balance after withdraw" 1040.0 (coin.get-balance "bob"))
 (commit-tx)
 
 
@@ -201,12 +206,13 @@
 ; ------------------------------------------------------------------------------
 ; Deposits now 16 times in a row
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
 (use cyKlone-utils)
+(use free.util-math)
 ; Verify the balance before
-(expect "Balance before deposit" 960.0 (coin.get-balance "alice"))
-(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE (* 16 DENOMINATION))]}])
+(expect-that "Balance before deposit" (between 959.0 960.0) (coin.get-balance "alice"))
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 161.0)]}])
 (deposit "alice" DEPOSIT_4)
 (deposit "alice" DEPOSIT_5)
 (deposit "alice" DEPOSIT_6)
@@ -227,12 +233,12 @@
 (repeat-N-work (* 16 6))
 
 ; Verify the balance after
-(expect "Balance after deposit" 800.0 (coin.get-balance "alice"))
+(expect-that "Balance after deposit" (between 799.0 800.0) (coin.get-balance "alice"))
 (commit-tx)
 
 ; Do some withdrawn
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
 (use cyKlone-utils)
 (withdraw "bob" WITHDRAW_10_10_NULL WITHDRAW_10_10_ROOT WITHDRAW_10_10_PROOF)
@@ -241,7 +247,7 @@
 (rollback-tx)
 
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
 (use cyKlone-utils)
 (withdraw "bob" WITHDRAW_10_18_NULL WITHDRAW_10_18_ROOT WITHDRAW_10_18_PROOF)
@@ -250,7 +256,7 @@
 
 
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
 (use cyKlone-utils)
 (withdraw "bob" WITHDRAW_19_19_NULL WITHDRAW_19_19_ROOT WITHDRAW_19_19_PROOF)
@@ -265,12 +271,13 @@
 ; Now we are filling several levels of the tree until rank 65 and checks that everything is fine
 ; This test as well the filling of the known-root hist
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
 (use cyKlone-utils)
+(use free.util-math)
 ; Verify the balance before
-(expect "Balance before deposit" 800.0 (coin.get-balance "alice"))
-(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE (* 22 DENOMINATION))]}])
+(expect-that "Balance before deposit" (between 799.0 800.0) (coin.get-balance "alice"))
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 221.0 )]}])
 (deposit "alice" DEPOSIT_20)
 (deposit "alice" DEPOSIT_21)
 (deposit "alice" DEPOSIT_22)
@@ -296,24 +303,24 @@
 (deposit "alice" DEPOSIT_40)
 (deposit "alice" DEPOSIT_41)
 
-(expect "Balance after deposit" 580.0 (coin.get-balance "alice"))
+(expect-that "Balance after deposit" (between 479.0 580.0) (coin.get-balance "alice"))
 
 (repeat-N-work (* 11 6))
 (commit-tx)
 
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
 (use cyKlone-utils)
 (repeat-N-work (* 11 6))
 (expect-failure "No work anymore" "work" (work))
 (expect-that "Deposit count and rank must have been incremented to 42" (and? (compose (at 'deposit-count) (= 42))
-                                                                             (compose (at 'current-rank) (= 42))) (get-state))
+                                                                             (compose (at 'current-rank) (= 42))) (get-state "10KDA"))
 (commit-tx)
 
 ; Do some withdrawals now
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
 
 ; Withdrawl from an old root shoudn't work
@@ -324,14 +331,14 @@
 (commit-tx)
 
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
 (withdraw "bob" WITHDRAW_40_40_NULL WITHDRAW_40_40_ROOT WITHDRAW_40_40_PROOF)
 (expect-that "Balance after withdraw" (< 1079.0) (coin.get-balance "bob"))
 (commit-tx)
 
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
 (withdraw "bob" WITHDRAW_41_41_NULL WITHDRAW_41_41_ROOT WITHDRAW_41_41_PROOF)
 (expect-that "Balance after withdraw" (< 1089.0) (coin.get-balance "bob"))
@@ -339,7 +346,7 @@
 
 ;;;;;  ---------------------------- LOCAL FUNCTIONS TEST ----------------------
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
 (expect "Deposit rank is OK" 10 (get-deposit-rank DEPOSIT_10))
 (expect "Commitment not deposited => -1" -1 (get-deposit-rank DEPOSIT_45))
@@ -347,5 +354,5 @@
 (expect "Nullifier state of an already withdrawn => True" true (get-nullifier-state WITHDRAW_41_41_NULL))
 (expect "Nullifier state of not withdrawn => False" false (get-nullifier-state WITHDRAW_36_36_NULL))
 
-(expect "Check a deposit range" [DEPOSIT_12, DEPOSIT_13, DEPOSIT_14, DEPOSIT_15] (get-deposits-range 12 15))
-(expect "Check a deposit range" [DEPOSIT_39, DEPOSIT_40, DEPOSIT_41] (get-deposits-range 39 45))
+(expect "Check a deposit range" [DEPOSIT_12, DEPOSIT_13, DEPOSIT_14, DEPOSIT_15] (get-deposits-range "10KDA" 12 15))
+(expect "Check a deposit range" [DEPOSIT_39, DEPOSIT_40, DEPOSIT_41] (get-deposits-range "10KDA" 39 45))
