@@ -1,0 +1,128 @@
+(load "../kadena_repl_sandbox/kda-env/init.repl")
+
+;; Define the governance keyset
+(begin-tx)
+(namespace 'free)
+(env-data {'ks:["governance-key"]})
+(env-keys ["governance-key"] )
+(define-keyset "free.cyKlone-test-ks" (read-keyset 'ks))
+(commit-tx)
+
+;; Load Poseidon contracts
+(begin-tx)
+(namespace 'free)
+(load "../pact-zk-hashes/pact/contracts/poseidon-constants.pact")
+(load "../pact-zk-hashes/pact/contracts/poseidon.pact")
+(commit-tx)
+
+;; Load cyKlone
+(begin-tx)
+(env-keys ["governance-key"] )
+(namespace 'free)
+(load "../contracts/cyklone-withdraw-verifier-v0.pact")
+(load "../contracts/cyklone.pact")
+(create-table pool-state)
+(create-table nullifiers)
+(create-table deposits)
+(add-pool "10KDA" 10.0)
+(coin.create-account WORK-GAS-STATION basic-guards.GUARD_SUCCESS)
+(commit-tx)
+
+; Load test vectors in the root namespace
+(begin-tx)
+(load "test-vectors.pact")
+(commit-tx)
+
+; Load an util module no make n-work
+(begin-tx)
+(module cyKlone-utils G
+  (defcap G() true)
+  (defun repeat-N-work (n:integer)
+    (let ((_work (lambda (_) (free.cyKlone-v0-multipool.work))))
+      (map (_work) (enumerate 1 n))))
+)
+(commit-tx)
+
+(env-data {'pool:"10KDA"})
+; ------------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
+; ------------------------------------------------------------------------------
+;;; First Alice Deposit
+(begin-tx)
+(use free.cyKlone-v0-multipool)
+(use test-vectors)
+(use free.util-math)
+; Verify the balance before
+(expect "Balance before deposit" 1000.0 (coin.get-balance "alice"))
+
+;Do the deposit
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 11.0)]}])
+(deposit "alice" DEPOSIT_0)
+
+; Try to deposit 2 times
+(expect-failure "Can't deposit 2 times with the same commitment" "already submitted" (deposit "alice" DEPOSIT_0))
+
+; Verify the balance after
+(expect-that "Balance after deposit" (between 989.0 990.0) (coin.get-balance "alice"))
+(commit-tx)
+
+; Try to withdraw
+(begin-tx)
+(use free.cyKlone-v0-multipool)
+(use test-vectors)
+(use cyKlone-utils)
+
+; Verify the balance of Bob before
+(expect "Balance before withdraw" 1000.0 (coin.get-balance "bob"))
+(expect-failure "Must not work => Deposit not processed" "root unknown" (withdraw "bob" WITHDRAW_0_0_NULL WITHDRAW_0_0_ROOT WITHDRAW_0_0_PROOF))
+
+(expect-that "Deposit count must have been incremented" (compose (at 'deposit-count) (= 1)) (get-state "10KDA"))
+
+; Process te deposit
+(repeat-N-work 6)
+(expect-that "Deposit rank must have been incremented" (compose (at 'current-rank) (= 1)) (get-state "10KDA"))
+
+; There is no work anymore
+(expect-failure "No work anymore" "work" (work))
+
+; And retry to withdraw
+; But first with a bad proof
+(expect-failure "Must not work => Bad paramaters" "does not match" (withdraw "bob" WITHDRAW_0_0_NULL WITHDRAW_0_0_ROOT WITHDRAW_0_1_PROOF))
+; A bad root
+(expect-failure "Must not work => Bad paramaters" "unknown" (withdraw "bob" WITHDRAW_0_0_NULL WITHDRAW_0_1_ROOT WITHDRAW_0_0_PROOF))
+; And a bad nullifier
+(expect-failure "Must not work => Bad paramaters" "does not match" (withdraw "bob" WITHDRAW_1_1_NULL WITHDRAW_0_0_ROOT WITHDRAW_0_0_PROOF))
+; And a bad account
+(expect-failure "Must not work => Bad paramaters" "does not match" (withdraw "carol" WITHDRAW_0_0_NULL WITHDRAW_0_0_ROOT WITHDRAW_0_0_PROOF))
+
+
+; And finally with everything OK
+(withdraw "bob" WITHDRAW_0_0_NULL WITHDRAW_0_0_ROOT WITHDRAW_0_0_PROOF)
+(expect "Balance after withdraw" 1010.0 (coin.get-balance "bob"))
+
+; Try to withdraw again
+(expect-failure "Double withdraw is porhibited" "already withdrawn" (withdraw "bob" WITHDRAW_0_0_NULL WITHDRAW_0_0_ROOT WITHDRAW_0_0_PROOF))
+(commit-tx)
+
+; Check another time to deposit the same commitment
+; Because here the commitment is not in queue anymore but should however fail
+(begin-tx)
+(use free.cyKlone-v0-multipool)
+(use test-vectors)
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 11.0)]}])
+; Try to deposit 2 times
+(expect-failure "Can't deposit 2 times with the same commitment" "already submitted" (deposit "alice" DEPOSIT_0))
+(commit-tx)
+
+;;;;  ---------------------------- LOCAL FUNCTIONS TEST ----------------------
+(begin-tx)
+(use free.cyKlone-v0-multipool)
+(use test-vectors)
+(expect "Deposit rank is OK" 0 (get-deposit-rank DEPOSIT_0))
+(expect "Commitment not deposited => -1" -1 (get-deposit-rank DEPOSIT_45))
+
+(expect "Nullifier state of an already withdrawn => True" true (get-nullifier-state WITHDRAW_0_0_NULL))
+(expect "Nullifier state of not withdrawn => False" false (get-nullifier-state WITHDRAW_2_2_NULL))
+
+(expect "Check a deposit range" [DEPOSIT_0] (get-deposits-range "10KDA" 0 15))
+(expect "Check a deposit range" [] (get-deposits-range "BAD_POOL" 0 15))

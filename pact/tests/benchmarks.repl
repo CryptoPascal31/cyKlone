@@ -21,7 +21,7 @@
 (namespace 'free)
 (load "../contracts/cyklone-withdraw-verifier-v0.pact")
 (load "../contracts/cyklone.pact")
-(create-table global-state)
+(create-table pool-state)
 (create-table nullifiers)
 (create-table deposits)
 (init)

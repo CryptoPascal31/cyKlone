@@ -1,18 +1,18 @@
 (module cyKlone-relay-v0 GOVERNANCE
-  (defconst VERSION:string "0.1")
+  (defconst VERSION:string "0.2")
   (implements gas-payer-v1)
 
   (use free.util-math [xEy])
   (use free.util-strings [starts-with])
   (use free.util-lists [first])
-  (use cyKlone-v0-10 [WITHDRAW-AMOUNT withdraw-create] )
+  (use cyKlone-v0-multipool [withdraw-create] )
 
   (defcap GOVERNANCE ()
     (enforce-keyset "free.cyKlone-test-ks"))
 
 
   ; -------------------- GAS PAYER SETTINGS ------------------------------------
-  (defconst GAS-PAYER-ACCOUNT:string "cyKlone-relay-gas")
+  (defconst GAS-PAYER-ACCOUNT:string "cyKlone-multi-v0-relay-gas")
 
   (defconst GAS-PRICE-MAX:decimal (xEy 1.0 -8))
 
@@ -67,11 +67,12 @@
 
 
   (defun withdraw-create-relay (dst-account:string dst-guard:guard nullifier-hash:string root:string proof:string)
-    (let ((relayer-act (relayer-account dst-account))
-          (relayer-guard (relayer-account-guard dst-account))
-          (final-amount (- WITHDRAW-AMOUNT TOTAL-GAS)))
-      ; First step => withdraw to the relayer account
-      (withdraw-create relayer-act relayer-guard nullifier-hash root proof)
+    (let* ((relayer-act (relayer-account dst-account))
+           (relayer-guard (relayer-account-guard dst-account))
+           ; First step => withdraw to the relayer account
+           ; Remark: (withdraw-create) returns the withdrawn amount; we cas use it
+           (withdrawn-amount (withdraw-create relayer-act relayer-guard nullifier-hash root proof))
+           (final-amount (- withdrawn-amount TOTAL-GAS)))
 
       (with-capability (RELAY dst-account)
         ; Pay the final dst-account

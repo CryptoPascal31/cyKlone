@@ -7,7 +7,7 @@
 (define-keyset "free.cyKlone-test-ks" (read-keyset 'ks))
 
 ;Stub module
-(module cyKlone-v0-10 G
+(module cyKlone-v0-multipool G
   (defcap G () true)
 
   (defconst WORK-GAS:integer 120000)
@@ -21,7 +21,7 @@
   (defun set-false()
     (write T "" {'my-bool:false}))
 
-  (defun has-work:bool ()
+  (defun has-work:bool (pool:string)
     (with-read T "" {'my-bool:=b} b))
 )
 (create-table T)
@@ -47,7 +47,7 @@
 (begin-tx)
 (use free.cyKlone-work-gas-station)
 (env-chain-data { "gas-price":  0.00000001, "gas-limit": 120000})
-(env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-v0-10.work)"]})
+(env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-v0-multipool.work)"], "exec-user-data":{'pool:"MY-POOL"}})
 
 (test-capability (coin.GAS))
 (test-capability (GAS_PAYER "user" 1 1.0))
@@ -57,8 +57,18 @@
 
 (begin-tx)
 (use free.cyKlone-work-gas-station)
+(env-chain-data { "gas-price":  0.00000001, "gas-limit": 120000})
+(env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-v0-multipool.work)"], "exec-user-data":{}})
+
+(test-capability (coin.GAS))
+(expect-failure "Fail bad user data" "User data" (test-capability (GAS_PAYER "user" 1 1.0)))
+(commit-tx)
+
+
+(begin-tx)
+(use free.cyKlone-work-gas-station)
 (env-chain-data { "gas-price":  0.00000002, "gas-limit": 120000})
-(env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-v0-10.work)"]})
+(env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-v0-multipool.work)"], "exec-user-data":{'pool:"MY-POOL"}})
 
 (test-capability (coin.GAS))
 (expect-failure "Fail bad gas" "Gas" (test-capability (GAS_PAYER "user" 1 1.0)))
@@ -68,7 +78,7 @@
 (begin-tx)
 (use free.cyKlone-work-gas-station)
 (env-chain-data { "gas-price":  0.00000001, "gas-limit": 120000})
-(env-data { "tx-type": "exec", "exec-code": ["(free.sex)"]})
+(env-data { "tx-type": "exec", "exec-code": ["(free.have-sex)"],  "exec-user-data":{'pool:"MY-POOL"}})
 
 (test-capability (coin.GAS))
 (expect-failure "Fail bad code" "Code" (test-capability (GAS_PAYER "user" 1 1.0)))
@@ -77,10 +87,10 @@
 
 (begin-tx)
 (use free.cyKlone-work-gas-station)
-(free.cyKlone-v0-10.set-false)
+(free.cyKlone-v0-multipool.set-false)
 
 (env-chain-data { "gas-price":  0.00000001, "gas-limit": 120000})
-(env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-v0-10.work)"]})
+(env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-v0-multipool.work)"],  "exec-user-data":{'pool:"MY-POOL"}})
 (test-capability (coin.GAS))
 (expect-failure "Fail bad code" "No work" (test-capability (GAS_PAYER "user" 1 1.0)))
 (commit-tx)

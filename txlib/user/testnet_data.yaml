@@ -1,8 +1,7 @@
 chain: 18
 network: testnet04
-module: free.cyKlone-v0-10
+module: free.cyKlone-v0-multipool
 gas-station: free.cyKlone-work-gas-station
-gas-station-acct: cyKlone-work-gas
-reserve: c:dVMoyMipASBgWTcylhQg6FoK63kLqjgiimckfaHbiz0
-amount: 10.0
+gas-station-acct: cyKlone-multi-v0-work-gas
+reserve: c:f_OAyYvmH3qs7rFS25VXypgHx6TIXB4STsYqablCAJM
 tmp-key: d8bd3a540f9bafe15719fb9ef530a638b19cee30c6a9d19d9cca52db3c196427

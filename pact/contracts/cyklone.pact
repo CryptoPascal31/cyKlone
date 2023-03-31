@@ -1,5 +1,5 @@
-(module cyKlone-v0-10 GOVERNANCE
-  (defconst VERSION:string "0.23")
+(module cyKlone-v0-multipool UPGRADE-MODULE
+  (defconst VERSION:string "0.30")
   (defconst MODULE-FREEZE-DATE (time "2023-10-30T00:00:00Z"))
 
   (use free.util-math [xEy])
@@ -10,18 +10,19 @@
   (use free.poseidon-hash-v1 [poseidon-hash])
   (use cyklone-withdraw-verifier-v0 [verify])
 
-  (defcap GOVERNANCE ()
+  (defcap UPGRADE-MODULE ()
     ; After freeze date the module becomes not upgradable
     (enforce (is-future MODULE-FREEZE-DATE) "Module is definitively frozen")
+    (enforce-keyset "free.cyKlone-test-ks")
+  )
+
+  (defcap POOLS-GOVERNANCE ()
     (enforce-keyset "free.cyKlone-test-ks")
   )
 
 
   ; -------------------------- CONSTANTS ---------------------------------------
   ;-----------------------------------------------------------------------------
-  ; Denomitation of the Contract (ie Deposit amount)
-  (defconst DENOMINATION:decimal 10.0)
-
   ; Total height of the Merkle tree
   (defconst MERKLE-TREE-DEPTH:integer 18)
 
@@ -41,11 +42,6 @@
   ; = Number of Rounds * Round Cost * Gas Price
   (defconst FEES:decimal (xEy (* 1.0 (* WORK-ROUNDS WORK-GAS)) -8))
 
-  ; Withdrawable amount
-  ;  = Denomination - Fees
-  (defconst WITHDRAW-AMOUNT:decimal (- DENOMINATION FEES))
-
-
   ; -------------------------- DATA AND TABLES ---------------------------------
   ;-----------------------------------------------------------------------------
   (defschema merkle-data-schema
@@ -55,8 +51,9 @@
     current-hash:integer ;Hash the last computed node
   )
 
-  (defschema global-state-schema
+  (defschema pool-state-schema
     @doc "Global state of the contract => Only one instance is stored"
+    deposit-amount:decimal ; Amount to deposit
     deposit-count:integer ;The total of deposit already made (including thoses in queue)
     current-rank:integer ; The rank of the next deposit. The rank is updated once a deposit has been fully computed
     withdrawal-count:integer ; The total number of withdrawals already made
@@ -72,10 +69,11 @@
 
   (defschema deposit-schema
     @doc "Store a deposit: ie a Merkle leaf"
+    pool:string
     rank:integer
   )
 
-  (deftable global-state:{global-state-schema})
+  (deftable pool-state:{pool-state-schema})
 
   (deftable nullifiers:{nullifier-schema})
 
@@ -109,7 +107,7 @@
   (defconst RESERVE:string (create-principal RESERVE-GUARD))
 
   ; Gas station to be funded for future gas spending during (work) calls
-  (defconst WORK-GAS-STATION:string "cyKlone-work-gas")
+  (defconst WORK-GAS-STATION:string "cyKlone-multi-v0-work-gas")
 
 
   ; -------------------------- UTILITIES ---------------------------------------
@@ -162,16 +160,19 @@
     @doc "Return true if the bit at position is set"
     (!= 0 (& (shift 1 position) x)))
 
+  (defun get-pool:string ()
+    (read-string 'pool))
+
   ; -------------------------- ADMINISTRATIVE FUNCTIONS-------------------------
   ;-----------------------------------------------------------------------------
-  (defun init ()
-    @doc "Init the module => Must be called once"
-    (with-capability (GOVERNANCE)
-      ; Create the Reserve account
-      (coin.create-account RESERVE RESERVE-GUARD)
+  (defun add-pool (pool:string amount:decimal)
+    @doc "Add a pool"
+    (with-capability (POOLS-GOVERNANCE)
       ; Create the global state entry with default values
-      (insert global-state ""
-        {'deposit-count:0,
+      (insert pool-state pool
+        {
+         'deposit-amount:amount,
+         'deposit-count:0,
          'current-rank:0,
          'withdrawal-count:0,
          'last-known-roots:(make-list 32 0),
@@ -182,9 +183,9 @@
 
   ; -------------------------- WORK FUNCTIONS ----------------------------------
   ;-----------------------------------------------------------------------------
-  (defun has-work:bool ()
+  (defun has-work:bool (pool:string)
     @doc "Return True if the contract needs for (work) being called"
-    (with-read global-state "" {'deposit-queue:=deposit-queue, 'merkle-tree-data:=merkle-state}
+    (with-read pool-state pool {'deposit-queue:=deposit-queue, 'merkle-tree-data:=merkle-state}
       (or?  (> (length deposit-queue)) ;If there are some stuffs in deposit queue => work is needed
             (> (at 'current-level merkle-state)) ;If current-level is not null, it means that a deposit is ongoing
             0))
@@ -214,41 +215,42 @@
       __data)
   )
 
-  (defun deposit-from-queue:object{merkle-data-schema}  (rank:integer in:object{merkle-data-schema})
+  (defun deposit-from-queue:object{merkle-data-schema}  (pool:string rank:integer in:object{merkle-data-schema})
     @doc "Take a deposit from the queue, and insert a leaf in the Merkle tree"
     (require-capability (DO-WORK))
-    (with-read global-state "" {'deposit-queue:=deposit-queue}
+    (with-read pool-state pool {'deposit-queue:=deposit-queue}
       (let  ((new-deposit (first deposit-queue))) ; Get the first item of the deposit queue
         ; Insert the leaf in the deposits table
-        (insert deposits (as-string new-deposit) {'rank:rank})
+        (insert deposits (as-string new-deposit) {'rank:rank,
+                                                  'pool:pool})
         ; Remove the item from the deposit queue
-        (update global-state "" {'deposit-queue: (remove-first deposit-queue)})
+        (update pool-state pool {'deposit-queue: (remove-first deposit-queue)})
         ; Insert the commitment into the future computation of the tree.
         (+ {'current-hash:new-deposit} in)))
   )
 
-  (defun register-root:object{merkle-data-schema}  (rank:integer in:object{merkle-data-schema})
+  (defun register-root:object{merkle-data-schema}  (pool:string rank:integer in:object{merkle-data-schema})
     @doc "Function to be called when the full Merkle Tree (ie the root) has been computed \
         \ Store the root in the list of the last known roots"
     (require-capability (DO-WORK))
-    (with-read global-state "" {'last-known-roots:=roots}
+    (with-read pool-state pool {'last-known-roots:=roots}
       (let* ((new-root (at 'current-hash in))
              ; Take the last roots lists and insert the new computed root, managing the list as a FIFO.
              ; => Remove the first element, and insert the new at the end;
              (updated-roots (remove-first (append-last roots new-root))))
         ; Increment the insertion rank (ready for the next leaf), and save the new known roots FIFO
-        (update global-state "" {'current-rank: (++ rank ), 'last-known-roots:updated-roots})
+        (update pool-state pool {'current-rank: (++ rank ), 'last-known-roots:updated-roots})
         ; Finally reset the Merkle state object, by forcing the current level of calculation to 0.
         (+ {'current-level:0} in)))
   )
 
-  (defun do-step ()
+  (defun do-step (pool:string)
     @doc "Do a step of work"
     (require-capability (DO-WORK))
-    (with-read global-state "" {'merkle-tree-data:=data_0, 'current-rank:=rank, 'last-known-roots:=roots}
+    (with-read pool-state pool {'merkle-tree-data:=data_0, 'current-rank:=rank, 'last-known-roots:=roots}
       ; In case this is the first work iteration, insert a new leaf from the deposit queue
       (let* ((data_1 (if (= (at 'current-level data_0) 0)
-                         (deposit-from-queue rank data_0)
+                         (deposit-from-queue pool rank data_0)
                          data_0))
 
              ; Always, hash Three level of the tree
@@ -256,17 +258,17 @@
 
              ; In case this is the last iteration, register the found root, and reset calculation
              (data_3 (if (= (at 'current-level data_2) MERKLE-TREE-DEPTH)
-                         (register-root rank data_2)
+                         (register-root pool rank data_2)
                          data_2)))
-        (update global-state "" {'merkle-tree-data: data_3})))
+        (update pool-state pool {'merkle-tree-data: data_3})))
   )
 
   (defun work ()
     @doc "Main public function to be called to trigger work"
-    (let ((x (has-work)))
+    (let ((x (has-work (get-pool))))
       (enforce x "There is no work"))
     (with-capability (DO-WORK)
-      (do-step))
+      (do-step (get-pool)))
   )
 
 
@@ -275,7 +277,9 @@
   (defun deposit (src-account:string commitment:string)
     @doc "Public function to be called to do a deposit \
          \ The TRANSFER capability has to be set"
-    (with-read global-state "" {'deposit-count:=count, 'deposit-queue:=queue}
+    (with-read pool-state (get-pool) {'deposit-count:=count,
+                                        'deposit-queue:=queue,
+                                        'deposit-amount:=amount}
       ; Check that the maximum deposits count hasn't be reached
       (enforce (< count MAXIMUM-DEPOSITS) "Deposits limit reached")
       ; Check that the commitment is not already in the deposit queue
@@ -285,14 +289,17 @@
         (enforce (= -1 rank) "Deposit already submitted"))
 
       ; Transfer the money from the depositor to the main reserve
-      (coin.transfer-create src-account RESERVE RESERVE-GUARD DENOMINATION)
+      (coin.transfer-create src-account RESERVE RESERVE-GUARD (+ amount FEES))
 
       ; Transfer one part to the gas station for future work
       (with-capability (FUND-GAS-STATION)
-        (install-capability (coin.TRANSFER RESERVE WORK-GAS-STATION 10.0))
+        ; We install more transfer capability than needed, because it allow
+        ; to make several deposits in the same transaction. This is not 100% clean
+        ; However it should ol as the reseve is protected by the cap guard.
+        (install-capability (coin.TRANSFER RESERVE WORK-GAS-STATION 1.0))
         (coin.transfer RESERVE WORK-GAS-STATION FEES))
       ; Update the data
-      (update global-state ""
+      (update pool-state (get-pool)
               {'deposit-count: (++ count), ; Increment the deposit count
                'deposit-queue: (append-last queue (as-int commitment)) ;Append the deposit into the queue
               }))
@@ -301,7 +308,7 @@
 
   ; -------------------------- WITHDRAW FUNCTIONS ------------------------------
   ;-----------------------------------------------------------------------------
-  (defun enforce-withdraw (dst-account:string nullifier-hash:string root:string proof:string)
+  (defun enforce-withdraw (pool:string dst-account:string nullifier-hash:string root:string proof:string)
     @doc "Internal function only, do all common check to be sure that the withdrawal is legit \
        \  + Increment withdrawals counter"
     (require-capability (WITHDRAWAL))
@@ -310,7 +317,7 @@
       (enforce (not x) "Element already withdrawn"))
 
     ; Check that the provided root is known by the contract
-    (with-read global-state "" {'last-known-roots:=known-roots}
+    (with-read pool-state pool {'last-known-roots:=known-roots}
       (enforce (contains (as-int root) known-roots) "Merkle tree root unknown"))
 
     ;Check ZK Proof
@@ -319,8 +326,8 @@
       (enforce (verify account-hash outputs proof) "ZK Prof does not match"))
 
     ; Increment the withdrawal-count
-    (with-read global-state "" {'withdrawal-count:=count}
-      (update global-state "" {'withdrawal-count: (++ count)}))
+    (with-read pool-state pool {'withdrawal-count:=count}
+      (update pool-state pool {'withdrawal-count: (++ count)}))
 
     ; Insert the nullifier to prevent future double withdrawal
     (insert nullifiers nullifier-hash {'withdrawn:true})
@@ -329,31 +336,37 @@
   (defun withdraw-create (dst-account:string dst-guard:guard nullifier-hash:string root:string proof:string)
     @doc "Public function to do a withdrawal using internally (coin.transfer-create)"
     (with-capability (WITHDRAWAL)
-      (enforce-withdraw dst-account nullifier-hash root proof)
-      (install-capability (coin.TRANSFER RESERVE dst-account WITHDRAW-AMOUNT))
-      (coin.transfer-create RESERVE dst-account dst-guard WITHDRAW-AMOUNT))
-
+      (with-read pool-state (get-pool) {'deposit-amount:=amount}
+          (enforce-withdraw (get-pool) dst-account nullifier-hash root proof)
+          (install-capability (coin.TRANSFER RESERVE dst-account amount))
+          (coin.transfer-create RESERVE dst-account dst-guard amount)
+          amount))
   )
 
   (defun withdraw (dst-account:string nullifier-hash:string root:string proof:string)
     @doc "Public function to do a withdrawal using internally (coin.transfer)"
     (with-capability (WITHDRAWAL)
-      (enforce-withdraw dst-account nullifier-hash root proof)
-      (install-capability (coin.TRANSFER RESERVE dst-account WITHDRAW-AMOUNT))
-      (coin.transfer RESERVE dst-account WITHDRAW-AMOUNT))
+      (with-read pool-state (get-pool) {'deposit-amount:=amount}
+        (enforce-withdraw (get-pool) dst-account nullifier-hash root proof)
+        (install-capability (coin.TRANSFER RESERVE dst-account amount))
+        (coin.transfer RESERVE dst-account amount)
+        amount))
   )
 
 
   ; -------------------------- LOCAL FUNCTIONS ---------------------------------
   ;-----------------------------------------------------------------------------
-  (defun get-state:object{global-state-schema} ()
+  (defun get-state:object{pool-state-schema} (pool:string)
     @doc "Return the current state of the contract"
-    (read global-state "")
+    (read pool-state pool)
   )
 
-  (defun get-deposits-range:[string] (rank-min:integer rank-max:integer)
+  (defun get-deposits-range:[string] (pool:string rank-min:integer rank-max:integer)
     @doc "Return all deposits in a rank range. A sorted list is returned, starting by rank-min"
-    (let ((filter-func (lambda (k obj) (where 'rank (and? (<= rank-min) (>= rank-max)) obj)))
+    (let ((filter-func (lambda (k obj) (and? (where 'pool (= pool))
+                                             (where 'rank (and? (<= rank-min)
+                                                                (>= rank-max)))
+                                             obj)))
           (map-func (lambda (k obj) {'i:(at 'rank obj), 'v:k})))
 
       (map (at 'v ) (sort ['i] (fold-db deposits filter-func map-func))))

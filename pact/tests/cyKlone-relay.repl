@@ -21,10 +21,10 @@
 (namespace 'free)
 (load "../contracts/cyklone-withdraw-verifier-v0.pact")
 (load "../contracts/cyklone.pact")
-(create-table global-state)
+(create-table pool-state)
 (create-table nullifiers)
 (create-table deposits)
-(init)
+(add-pool "10KDA" 10.0)
 (coin.create-account WORK-GAS-STATION basic-guards.GUARD_SUCCESS)
 (commit-tx)
 
@@ -40,18 +40,18 @@
 (load "test-vectors.pact")
 (commit-tx)
 
-
+(env-data {'pool:"10KDA"})
 ;;; ----------------------- DEPOSIT ----------------------------------------
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
-(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE DENOMINATION)]}])
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 11.0)]}])
 (deposit "alice" DEPOSIT_0)
 (commit-tx)
 
 ;;; ----------------------- PROCESS 0DEPOSIT -----------------------------------
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (work)
 (work)
 (work)
@@ -64,7 +64,7 @@
 (begin-tx)
 (use free.cyKlone-relay-v0)
 (use test-vectors)
-(env-data {'ks:["bob-key"]})
+(env-data {'ks:["bob-key"], 'pool:"10KDA"})
 (print (format "Relayer account:{} -> {}" ["bob" (relayer-account "bob")]))
 (print (format "Total GAS: {}" [TOTAL-GAS]))
 (withdraw-create-relay "bob" (read-keyset 'ks) WITHDRAW_RELAY_0_0_NULL WITHDRAW_RELAY_0_0_ROOT WITHDRAW_RELAY_0_0_PROOF)

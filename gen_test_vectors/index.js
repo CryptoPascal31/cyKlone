@@ -9,6 +9,8 @@ const RELAY_MODULE = "free.cyKlone-relay-v0"
 
 const MAIN_WITHDRAWER = "bob"
 
+const NO_POOL = "";
+
 const compute_cap_guard_principal = (account) => "c:" + hash(`${RELAY_MODULE}.RELAY"${account}"`)
 
 
@@ -34,7 +36,7 @@ class CyKloneTreeTest extends CyKloneTree
 {
   constructor()
   {
-    super(nothing, reject)
+    super(nothing, reject, NO_POOL)
   }
 
   update()
@@ -45,6 +47,7 @@ class CyKloneTreeTest extends CyKloneTree
 }
 
 const cyKlone = new CyKlone(nothing, local_read, false);
+cyKlone.pool = NO_POOL;
 var deposit_data;
 
 
@@ -55,7 +58,7 @@ async function gen_proof(withdrawer, deposit_index, tree_size)
   const testTree = new CyKloneTreeTest()
   await testTree.load()
   testTree.insert_commitments(deposit_data.slice(0, tree_size+1).map( (x) => x.commitment_str))
-  cyKlone.tree = testTree
+  cyKlone.trees[NO_POOL] = testTree;
   return await cyKlone.compute_withdrawal_data(withdrawer, MNEMONIC, deposit_index.toString())
 }
 
