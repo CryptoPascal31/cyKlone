@@ -53,7 +53,7 @@
 
   (defschema global-state-schema
     @doc "Global state of the contract => Only one instance is stored"
-    amount:decimal ; Amount to deposit
+    deposit-amount:decimal ; Amount to deposit
     deposit-count:integer ;The total of deposit already made (including thoses in queue)
     current-rank:integer ; The rank of the next deposit. The rank is updated once a deposit has been fully computed
     withdrawal-count:integer ; The total number of withdrawals already made
@@ -171,7 +171,7 @@
       ; Create the global state entry with default values
       (insert global-state pool
         {
-         'amount:amount,
+         'deposit-amount:amount,
          'deposit-count:0,
          'current-rank:0,
          'withdrawal-count:0,
@@ -279,7 +279,7 @@
          \ The TRANSFER capability has to be set"
     (with-read global-state (get-pool) {'deposit-count:=count,
                                         'deposit-queue:=queue,
-                                        'amount:=amount}
+                                        'deposit-amount:=amount}
       ; Check that the maximum deposits count hasn't be reached
       (enforce (< count MAXIMUM-DEPOSITS) "Deposits limit reached")
       ; Check that the commitment is not already in the deposit queue
@@ -336,21 +336,21 @@
   (defun withdraw-create (dst-account:string dst-guard:guard nullifier-hash:string root:string proof:string)
     @doc "Public function to do a withdrawal using internally (coin.transfer-create)"
     (with-capability (WITHDRAWAL)
-      (with-read global-state (get-pool) {'amount:=deposit-amount}
+      (with-read global-state (get-pool) {'deposit-amount:=amount}
           (enforce-withdraw (get-pool) dst-account nullifier-hash root proof)
-          (install-capability (coin.TRANSFER RESERVE dst-account deposit-amount))
-          (coin.transfer-create RESERVE dst-account dst-guard deposit-amount)
-          deposit-amount))
+          (install-capability (coin.TRANSFER RESERVE dst-account amount))
+          (coin.transfer-create RESERVE dst-account dst-guard amount)
+          amount))
   )
 
   (defun withdraw (dst-account:string nullifier-hash:string root:string proof:string)
     @doc "Public function to do a withdrawal using internally (coin.transfer)"
     (with-capability (WITHDRAWAL)
-      (with-read global-state (get-pool) {'amount:=deposit-amount}
+      (with-read global-state (get-pool) {'deposit-amount:=amount}
         (enforce-withdraw (get-pool) dst-account nullifier-hash root proof)
-        (install-capability (coin.TRANSFER RESERVE dst-account deposit-amount))
-        (coin.transfer RESERVE dst-account deposit-amount)
-        deposit-amount))
+        (install-capability (coin.TRANSFER RESERVE dst-account amount))
+        (coin.transfer RESERVE dst-account amount)
+        amount))
   )
 
 
