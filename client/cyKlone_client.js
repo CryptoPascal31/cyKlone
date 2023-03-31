@@ -111,7 +111,7 @@ async function send_work()
 
 function inquire_for_withdraw()
 {
-  return inquirer.prompt([{type:"input", name:"mnemonic", message:"Deposit's Mnemonic"},
+  return inquirer.prompt([{type:"input", name:"mnemonic", message:"Deposit's Mnemonic:"},
                           {type:"input", name:"password", message:"Password to protect your deposit:" },
                           {type:"input", name:"account", message:"Recipient's account:" }])
 }
