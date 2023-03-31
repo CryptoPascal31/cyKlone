@@ -7,7 +7,7 @@
 (define-keyset "free.cyKlone-test-ks" (read-keyset 'ks))
 
 ;Stub module
-(module cyKlone-v0-10 G
+(module cyKlone-v0-multipool G
   (defcap G () true)
 
   (defconst WORK-GAS:integer 120000)
@@ -87,7 +87,7 @@
 
 (begin-tx)
 (use free.cyKlone-work-gas-station)
-(free.cyKlone-v0-10.set-false)
+(free.cyKlone-v0-multipool.set-false)
 
 (env-chain-data { "gas-price":  0.00000001, "gas-limit": 120000})
 (env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-v0-multipool.work)"],  "exec-user-data":{'pool:"MY-POOL"}})

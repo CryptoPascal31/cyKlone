@@ -1,11 +1,11 @@
 (module cyKlone-work-gas-station GOVERNANCE
-  (defconst VERSION:string "0.2")
+  (defconst VERSION:string "0.21")
   (implements gas-payer-v1)
 
   (use coin)
   (use util.guards)
   (use free.util-math)
-  (use free.cyKlone-v0-10 [has-work WORK-GAS])
+  (use cyKlone-v0-multipool [has-work WORK-GAS])
 
   (defcap GOVERNANCE ()
     (enforce-keyset "free.cyKlone-test-ks"))
