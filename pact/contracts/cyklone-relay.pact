@@ -5,7 +5,7 @@
   (use free.util-math [xEy])
   (use free.util-strings [starts-with])
   (use free.util-lists [first])
-  (use cyKlone-v0-10 [WITHDRAW-AMOUNT withdraw-create] )
+  (use cyKlone-v0-multipool [withdraw-create] )
 
   (defcap GOVERNANCE ()
     (enforce-keyset "free.cyKlone-test-ks"))
@@ -67,11 +67,12 @@
 
 
   (defun withdraw-create-relay (dst-account:string dst-guard:guard nullifier-hash:string root:string proof:string)
-    (let ((relayer-act (relayer-account dst-account))
-          (relayer-guard (relayer-account-guard dst-account))
-          (final-amount (- WITHDRAW-AMOUNT TOTAL-GAS)))
-      ; First step => withdraw to the relayer account
-      (withdraw-create relayer-act relayer-guard nullifier-hash root proof)
+    (let* ((relayer-act (relayer-account dst-account))
+           (relayer-guard (relayer-account-guard dst-account))
+           ; First step => withdraw to the relayer account
+           ; Remark (withdraw-create) returns the withdrawn amount; we cas use it
+           (withdrawn-amount (withdraw-create relayer-act relayer-guard nullifier-hash root proof))
+           (final-amount (- withdrawn-amount TOTAL-GAS)))
 
       (with-capability (RELAY dst-account)
         ; Pay the final dst-account
