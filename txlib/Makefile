@@ -5,3 +5,4 @@ all:
 clean:
 	$(MAKE) -C deployment clean
 	$(MAKE) -C user clean
+	$(MAKE) -C admin clean

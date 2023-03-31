@@ -1,0 +1,20 @@
+code: |-
+  ({{module}}.add-pool "{{{pool-name}}}" {{{deposit-value}}})
+meta:
+  chainId: "{{chain}}"
+  sender: "{{{sender}}}"
+  gasLimit: 1000
+  gasPrice: 0.00000001
+  ttl: 3600
+networkId: "{{network}}"
+signers:
+  - public: "{{sender-key}}"
+    caps:
+      - name: "coin.GAS"
+        args: []
+  - public: "{{gov-key}}"
+    caps:
+      - name: "{{module}}.POOLS-GOVERNANCE"
+        args: []
+
+type: exec
