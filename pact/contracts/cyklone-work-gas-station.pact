@@ -10,7 +10,7 @@
   (defcap GOVERNANCE ()
     (enforce-keyset "free.cyKlone-test-ks"))
 
-  (defconst GAS_PAYER_ACCOUNT:string "cyKlone-work-gas")
+  (defconst GAS_PAYER_ACCOUNT:string "cyKlone-multi-v0-work-gas")
 
   (defconst GAS-PRICE:decimal (xEy 1.0 -8))
 

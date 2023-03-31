@@ -12,7 +12,7 @@
 
 
   ; -------------------- GAS PAYER SETTINGS ------------------------------------
-  (defconst GAS-PAYER-ACCOUNT:string "cyKlone-relay-gas")
+  (defconst GAS-PAYER-ACCOUNT:string "cyKlone-multi-v0-relay-gas")
 
   (defconst GAS-PRICE-MAX:decimal (xEy 1.0 -8))
 

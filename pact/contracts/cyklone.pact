@@ -107,7 +107,7 @@
   (defconst RESERVE:string (create-principal RESERVE-GUARD))
 
   ; Gas station to be funded for future gas spending during (work) calls
-  (defconst WORK-GAS-STATION:string "cyKlone-work-gas")
+  (defconst WORK-GAS-STATION:string "cyKlone-multi-v0-work-gas")
 
 
   ; -------------------------- UTILITIES ---------------------------------------
