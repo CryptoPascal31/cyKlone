@@ -4,5 +4,4 @@ include(../../pact/contracts/cyklone.pact)
 ifdef(`INIT',`
 (create-table global-state)
 (create-table nullifiers)
-(create-table deposits)
-(init)', `')
+(create-table deposits)', `')
