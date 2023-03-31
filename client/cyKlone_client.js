@@ -11,6 +11,7 @@ import YAML from 'yaml';
 const CHAINWEB = "https://api.testnet.chainweb.com"
 const CHAIN = 18
 const NETWORK = "testnet04"
+const AVAILABLE_POOLS = ["KDA_10", "KDA_100", "KDA_1000"];
 
 const API_SERVER = `${CHAINWEB}/chainweb/0.0/${NETWORK}/chain/${CHAIN}/pact`;
 const LOCAL_META = {chainId: CHAIN.toString(), gasLimit: 1000000};
@@ -50,12 +51,22 @@ const cyKlone = new CyKlone(local_pact, local_read);
 const builder = new CyKloneTransactionBuilder(local_pact, NETWORK, CHAIN);
 
 
+async function set_pool()
+{
+  const {selected_pool} = await inquirer.prompt([{type:"list", name:"selected_pool", message:"Select Pool:",
+                                         choices: AVAILABLE_POOLS}])
+  cyKlone.pool = selected_pool;
+  builder.pool = selected_pool;
+  console.log("Selected Pool: " +chalk.blue(selected_pool))
+}
+
+
 async function update_merkle_tree()
 {
   await cyKlone.tree.load()
                     .then(() => cyKlone.tree.update())
                     .then(() => cyKlone.tree.dump())
-                    .then((data) => promises.writeFile("merkle_tree.json", data))
+                    .then((data) => promises.writeFile(cyKlone.tree.backup_filename, data))
 }
 
 async function gen_deposit()
@@ -141,6 +152,7 @@ async function create_withdrawal_relayer_transaction()
 async function main_menu()
 {
   const EXIT = "Exit";
+  const SELECT_POOL = "Select pool"
   const UPDATE_LOCAL_DB = "Update local database";
   const GENERATE_COMMITMENT = "Generate commitment";
   const DEPOSIT = "Create Deposit transaction";
@@ -153,7 +165,8 @@ async function main_menu()
   {
     console.log("")
     const answer = await inquirer.prompt([{type:"list", name:"menu_item", message:"Menu:",
-                                           choices: [UPDATE_LOCAL_DB,
+                                           choices: [SELECT_POOL,
+                                                     UPDATE_LOCAL_DB,
                                                      DEPOSIT,
                                                      GENERATE_COMMITMENT,
                                                      COMPLETE_RUNNING_DEPOSITS,
@@ -168,6 +181,9 @@ async function main_menu()
     {
       switch(answer.menu_item)
       {
+        case SELECT_POOL:
+          await set_pool();
+          break;
         case UPDATE_LOCAL_DB:
           await update_merkle_tree();
           break;
@@ -202,6 +218,9 @@ async function main_menu()
 
 async function main()
 {
+  /* Set default pool */
+  cyKlone.pool = AVAILABLE_POOLS[0];
+  builder.pool = AVAILABLE_POOLS[0];
   await main_menu();
 }
 
