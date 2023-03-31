@@ -1,5 +1,5 @@
 (module cyKlone-relay-v0 GOVERNANCE
-  (defconst VERSION:string "0.1")
+  (defconst VERSION:string "0.2")
   (implements gas-payer-v1)
 
   (use free.util-math [xEy])
@@ -70,7 +70,7 @@
     (let* ((relayer-act (relayer-account dst-account))
            (relayer-guard (relayer-account-guard dst-account))
            ; First step => withdraw to the relayer account
-           ; Remark (withdraw-create) returns the withdrawn amount; we cas use it
+           ; Remark: (withdraw-create) returns the withdrawn amount; we cas use it
            (withdrawn-amount (withdraw-create relayer-act relayer-guard nullifier-hash root proof))
            (final-amount (- withdrawn-amount TOTAL-GAS)))
 
