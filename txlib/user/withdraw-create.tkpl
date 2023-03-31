@@ -5,6 +5,7 @@ data:
     pred: "keys-all"
     keys:
       - {{dst-key}}
+  pool: "{{pool}}"
 meta:
   chainId: "{{chain}}"
   sender: "{{{gas-payer}}}"

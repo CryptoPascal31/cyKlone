@@ -1,6 +1,7 @@
 code: |-
   ({{module}}.work)
 data:
+  pool: "{{pool}}"
 meta:
   chainId: "{{chain}}"
   sender: "{{gas-station-acct}}"

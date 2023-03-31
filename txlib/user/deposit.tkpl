@@ -1,6 +1,7 @@
 code: |-
   ({{module}}.deposit "{{{from-acct}}}" "{{{commitment}}}")
 data:
+  pool: "{{pool}}"
 meta:
   chainId: "{{chain}}"
   sender: "{{{from-acct}}}"
@@ -12,7 +13,7 @@ signers:
   - public: "{{from-key}}"
     caps:
       - name: "coin.TRANSFER"
-        args: ["{{{from-acct}}}", "{{{reserve}}}", {{amount}}]
+        args: ["{{{from-acct}}}", "{{{reserve}}}", {{amount-fees}}]
       - name: "coin.GAS"
         args: []
 type: exec
