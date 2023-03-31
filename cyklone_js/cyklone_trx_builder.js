@@ -14,11 +14,14 @@ class CyKloneTransactionBuilder
     this.kadena_local = kadena_local;
     this.network = network;
     this.chain = chain.toString()
+    this.pool = "";
   }
 
   deposit_paramaters()
   {
-    return this.kadena_local(`(use ${MODULE}){'amount:DENOMINATION, 'reserve:RESERVE}`)
+    return this.kadena_local(`(use ${MODULE})
+                              {'amount:(+ (at 'deposit-amount (get-state "${this.pool}")) FEES),
+                               'reserve:RESERVE}`);
   }
 
   get_account_key(account)
@@ -55,6 +58,7 @@ class CyKloneTransactionBuilder
 
     cmd.code = `(${MODULE}.deposit "${account}" "${deposit_data.commitment_str}")`
     cmd.setMeta({sender:account, chainId: this.chain, gasLimit: 3500}, this.network);
+    cmd.addData({pool:this.pool})
     cmd.addCap('coin.TRANSFER', account_key, account, reserve, pact_amount.toPactDecimal())
     cmd.addCap('coin.GAS', account_key)
     return cmd
@@ -68,7 +72,8 @@ class CyKloneTransactionBuilder
     cmd.code = `(${MODULE}.withdraw "${withdrawal_data.account}" (read-string 'nullifier) (read-string 'root) (read-string 'proof))`;
 
     cmd.setMeta({sender:gas_payer, chainId: this.chain, gasLimit: 35000}, this.network);
-    cmd.addData({nullifier:withdrawal_data.nullifier_hash,
+    cmd.addData({pool:this.pool,
+                 nullifier:withdrawal_data.nullifier_hash,
                  root:withdrawal_data.root,
                  proof:withdrawal_data.proof});
     cmd.addCap('coin.GAS', gas_payer_key);
@@ -86,6 +91,7 @@ class CyKloneTransactionBuilder
     cmd.code = `(${RELAY_MODULE}.withdraw-create-relay "${final_account}" (read-keyset 'ks) (read-string 'nullifier) (read-string 'root) (read-string 'proof))`
     cmd.setMeta({sender:gas_payer, chainId: this.chain, gasLimit: gas_limit, gasPrice:gas_price}, this.network);
     cmd.addData({ks:{pred:"keys-all", keys:[final_account_key]},
+                 pool:this.pool,
                  nullifier:withdrawal_data.nullifier_hash,
                  root:withdrawal_data.root,
                  proof:withdrawal_data.proof })
@@ -108,7 +114,7 @@ class CyKloneTransactionBuilder
     cmd.code = `(${MODULE}.work)`
     cmd.setMeta({sender:gas_payer, chainId: this.chain, gasLimit: gas_limit, gasPrice:gas_price}, this.network);
     cmd.addCap(`${WORK_GAS_STATION}.GAS_PAYER`, tmp_key.publicKey, "", PACT_ZERO.toPactInteger(), PACT_ZERO.toPactDecimal())
-
+    cmd.addData({pool:this.pool})
     const {hash} = cmd.createCommand()
     cmd.addSignatures(signHash(hash, tmp_key))
     return cmd

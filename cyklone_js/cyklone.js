@@ -15,12 +15,13 @@ class CyKlone
     this.kadena_local = kadena_local;
     this.resource_loader = resource_loader;
     this.check_roots_on_chain = check_roots_on_chain;
-    this.tree = new CyKloneTree(kadena_local, resource_loader);
+    this.trees = {};
     this.zokrates = null;
     this.circuit_commit_hasher = null;
     this.circuit_withdraw = null;
     this.proving_key = null;
     this.already_init = false;
+    this.pool = "";
   }
 
   async init()
@@ -41,6 +42,13 @@ class CyKlone
     this.already_init = true
   }
 
+  get tree()
+  {
+    if(! (this.pool in this.trees))
+      this.trees[this.pool] = new CyKloneTree(this.kadena_local, this.resource_loader, this.pool);
+    return this.trees[this.pool]
+  }
+
   /* --------------- KADENA Local Call Methods ------------------------*/
   relayer_account(account)
   {
@@ -49,7 +57,7 @@ class CyKlone
 
   known_roots()
   {
-   return this.kadena_local(`(at 'last-known-roots (${MODULE}.get-state))`)
+   return this.kadena_local(`(at 'last-known-roots (${MODULE}.get-state "${this.pool}"))`)
                            .then((res) => res.map((x) => x.int))
   }
 
@@ -61,7 +69,7 @@ class CyKlone
   current_work()
   {
     return this.kadena_local(`(use ${MODULE})
-                              (bind (get-state) {'deposit-count:=deps, 'current-rank:=rank, 'merkle-tree-data:=merkle-data}
+                              (bind (get-state "${this.pool}") {'deposit-count:=deps, 'current-rank:=rank, 'merkle-tree-data:=merkle-data}
                               (- (* WORK-ROUNDS (- deps rank ))
                               (/ (at 'current-level merkle-data) COMPUTED-LEVELS-PER-ROUND)))`)
   }

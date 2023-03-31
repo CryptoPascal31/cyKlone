@@ -10,10 +10,11 @@ const MAX_DOWNLOAD_LEAF = 100
 
 class CyKloneTree
 {
-  constructor(kadena_local, resource_loader)
+  constructor(kadena_local, resource_loader, pool="")
   {
     this.kadena_local = kadena_local;
     this.resource_loader = resource_loader;
+    this.pool = pool;
     this.tree = undefined;
   }
 
@@ -25,7 +26,7 @@ class CyKloneTree
     const F = poseidon.F;
     const hashfn = (l, r) => {return F.toString(poseidon([l,r]),10) }
 
-    return this.resource_loader("merkle_tree.json")
+    return this.resource_loader(this.backup_filename)
            .then((data) => {this.tree = MerkleTree.deserialize(JSON.parse(data), hashfn);
                             console.log(`Merkle loaded with ${this.tree.elements.length} elements`);},
 
@@ -34,14 +35,19 @@ class CyKloneTree
                 );
   }
 
+  get backup_filename()
+  {
+    return `merkle_tree_${this.pool}.json`;
+  }
+
   get_deposit_chunk(start, end)
   {
-    return this.kadena_local(`(${MODULE}.get-deposits-range ${start} ${end})`);
+    return this.kadena_local(`(${MODULE}.get-deposits-range "${this.pool}" ${start} ${end})`);
   }
 
   current_rank()
   {
-    return this.kadena_local(`(at 'current-rank (${MODULE}.get-state))`);
+    return this.kadena_local(`(at 'current-rank (${MODULE}.get-state "${this.pool}"))`);
   }
 
   insert_commitments(chunk)
