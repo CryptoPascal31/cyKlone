@@ -61,12 +61,12 @@ async function set_pool()
 }
 
 
-async function update_merkle_tree()
+function update_merkle_tree()
 {
-  await cyKlone.tree.load()
-                    .then(() => cyKlone.tree.update())
-                    .then(() => cyKlone.tree.dump())
-                    .then((data) => promises.writeFile(cyKlone.tree.backup_filename, data))
+  return  cyKlone.tree.load()
+                      .then(() => cyKlone.tree.update())
+                      .then(() => cyKlone.tree.dump())
+                      .then((data) => promises.writeFile(cyKlone.tree.backup_filename, data))
 }
 
 async function gen_deposit()
@@ -82,10 +82,10 @@ async function gen_deposit()
   return cyKlone.compute_deposit_data(mnemonic, password);
 }
 
-async function generate_commitment()
+function generate_commitment()
 {
-  const deposit_data = await gen_deposit()
-  console.log("Commitment: " +chalk.blue(deposit_data.commitment_str))
+  return gen_deposit()
+         .then((deposit_data) => {console.log("Commitment: " +chalk.blue(deposit_data.commitment_str))})
 }
 
 async function create_deposit_transaction()
