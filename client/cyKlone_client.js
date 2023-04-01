@@ -41,7 +41,11 @@ async function export_yaml_trx(cmd)
                    sigs: Object.fromEntries(cmd.signers.map(  (x,i) => [x.pubKey, cmd.sigs[i] === undefined?null:cmd.sigs[i].sig]))
                   };
 
-  await promises.writeFile("tx.yaml",YAML.stringify(sigdata, { lineWidth:0}))
+  const trx_string = YAML.stringify(sigdata, { lineWidth:0})
+  console.log(chalk.magenta("------------------------------------------------------------------"));
+  console.log(trx_string.trim())
+  console.log(chalk.magenta("------------------------------------------------------------------"));
+  await promises.writeFile("tx.yaml",trx_string)
   console.log("Transaction written to => " + chalk.blue("tx.yaml"))
   console.log("It can be signed/submitted by Chainweaver's SigBuilder")
   console.log("or with 'kda sign tx.yaml -k', 'kda send tx.json'")
