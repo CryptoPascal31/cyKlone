@@ -28,7 +28,7 @@ This project uses the following tools:
 ## Principle of operation
 
 The protocol is organized in several modules:
-   - `cyKlone-V0`  => main module, manages most stuffs
+   - `cyKlone-mutipool-V0`  => main module, manages most stuffs
    - `poseidon-hash-v1` and `poseidon-constants-v1` => Compute the Poseidon Hash
    - `cyklone-withdraw-verifier-v0` => Auto generated module to verify the ZK proof.
 
@@ -40,9 +40,5 @@ There are 2 helpers modules:
 
 
 ## TODO
-
-TL;DR: **A lot**
-
-  - Improve contract to handle several denominations.
-  - Add more tests.
+  - Create a web UI
   - Organize a safe setup for the ZK keys.
