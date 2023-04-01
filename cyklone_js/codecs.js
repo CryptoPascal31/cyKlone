@@ -14,7 +14,11 @@ export function int_to_b64(x)
 
 export function b64_to_dec(x)
 {
-  const buffer = base64UrlDecodeArr(x);
+  let buffer = base64UrlDecodeArr(x);
+  /* Workaround in case if the number is too little, and the array is less than
+     32 bytes */
+  while(buffer.length < 32)
+    buffer = new Uint8Array([0, ...buffer]);
   return S.fromRprBE(buffer,0).toString();
 }
 
