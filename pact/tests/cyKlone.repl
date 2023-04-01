@@ -348,8 +348,8 @@
 (begin-tx)
 (use free.cyKlone-v0-multipool)
 (use test-vectors)
-(expect "Deposit rank is OK" 10 (get-deposit-rank DEPOSIT_10))
-(expect "Commitment not deposited => -1" -1 (get-deposit-rank DEPOSIT_45))
+(expect "Deposit rank is OK" {'rank:10, 'pool:"10KDA"} (get-deposit-data DEPOSIT_10))
+(expect "Commitment not deposited => -1" {'rank:-1, 'pool:""} (get-deposit-data DEPOSIT_45))
 
 (expect "Nullifier state of an already withdrawn => True" true (get-nullifier-state WITHDRAW_41_41_NULL))
 (expect "Nullifier state of not withdrawn => False" false (get-nullifier-state WITHDRAW_36_36_NULL))

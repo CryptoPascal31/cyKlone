@@ -1,5 +1,5 @@
 (module cyKlone-v0-multipool UPGRADE-MODULE
-  (defconst VERSION:string "0.30")
+  (defconst VERSION:string "0.31")
   (defconst MODULE-FREEZE-DATE (time "2023-10-30T00:00:00Z"))
 
   (use free.util-math [xEy])
@@ -372,10 +372,9 @@
       (map (at 'v ) (sort ['i] (fold-db deposits filter-func map-func))))
   )
 
-  (defun get-deposit-rank:integer (commitment:string)
-    @doc "Return the rank of a commitment, Returns -1 if the commitment is not found"
-    (with-default-read deposits commitment {'rank:-1} {'rank:=rank}
-      rank)
+  (defun get-deposit-data:object{deposit-schema} (commitment:string)
+    @doc "Return the data of a commitment , Returns -1 for then rank if the commitment is not found"
+    (try {'rank:-1, 'pool:""} (read deposits commitment))
   )
 
   (defun get-nullifier-state:bool (nullifier-hash:string)
