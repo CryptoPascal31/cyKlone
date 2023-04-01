@@ -90,6 +90,18 @@ class CyKlone
                             }))
   }
 
+  deposit_state(commitment)
+  {
+    return this.kadena_local(`(use ${MODULE})
+                              (bind (get-state "${this.pool}") {'current-rank:=process-rank, 'deposit-queue:=queue}
+                                (bind (get-deposit-data "${commitment}" ) {'rank:=rank}
+                                  (cond
+                                    ((contains (as-int "${commitment}") queue) "In queue")
+                                    ((= rank -1) "Deposit unknown")
+                                    ((> process-rank rank) "Completed")
+                                    "Processing")))`)
+  }
+
   compute_deposit_data(bip39_phrase, password)
   {
     if (! validateMnemonic(bip39_phrase))

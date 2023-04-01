@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 import {CyKlone, CyKloneTransactionBuilder} from 'cyklone_js';
 import {PactCommand} from '@kadena/client'
-import {generateMnemonic} from 'bip39';
+import {generateMnemonic, validateMnemonic} from 'bip39';
 import { promises} from 'fs'
 import inquirer from 'inquirer';
 import chalk from 'chalk';
@@ -111,6 +111,22 @@ function generate_commitment()
          .then((deposit_data) => {console.log("Commitment: " +chalk.blue(deposit_data.commitment_str))})
 }
 
+async function get_deposit_state()
+{
+  const {input} = await inquirer.prompt([{type:"input", name:"input", message:"Deposit's Mnemonic or Commitment:"}])
+
+  let status;
+
+  if(validateMnemonic(input))
+    status = await cyKlone.init()
+                   .then(() => inquirer.prompt([{type:"input", name:"password", message:"Password to protect your deposit:" }])  )
+                   .then((r) => cyKlone.deposit_state(cyKlone.compute_deposit_data(input, r.password).commitment_str))
+  else
+    status = await cyKlone.deposit_state(input);
+
+  console.log("Status:" + chalk.blue(status))
+}
+
 async function create_deposit_transaction()
 {
   const deposit_data = await gen_deposit()
@@ -180,6 +196,7 @@ async function main_menu()
   const UPDATE_LOCAL_DB = "Update local database";
   const GENERATE_COMMITMENT = "Generate commitment";
   const DEPOSIT = "Create Deposit transaction";
+  const DEPOSIT_STATUS = "Deposit status";
   const COMPLETE_RUNNING_DEPOSITS = "Complete current deposits";
   const GENERATE_PROOF = "Generate proof";
   const WITHDRAW ="Withdraw";
@@ -195,7 +212,7 @@ async function main_menu()
                                                      DEPOSIT,
                                                      GENERATE_COMMITMENT,
                                                      COMPLETE_RUNNING_DEPOSITS,
-                                                     "Deposit status",
+                                                     DEPOSIT_STATUS,
                                                      GENERATE_PROOF,
                                                      WITHDRAW,
                                                      WITHDRAW_RELAY,
@@ -217,6 +234,9 @@ async function main_menu()
           break;
         case DEPOSIT:
           await create_deposit_transaction();
+          break;
+        case DEPOSIT_STATUS:
+          await get_deposit_state();
           break;
         case GENERATE_COMMITMENT:
           await generate_commitment();
