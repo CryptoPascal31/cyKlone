@@ -192,11 +192,11 @@ async function main_menu()
 {
   const EXIT = "Exit";
   const SELECT_POOL = "Select pool";
-  const PRINT_POOL_DATA = "Get pool data";
+  const PRINT_POOL_DATA = "Show pool data";
   const UPDATE_LOCAL_DB = "Update local database";
   const GENERATE_COMMITMENT = "Generate commitment";
   const DEPOSIT = "Create Deposit transaction";
-  const DEPOSIT_STATUS = "Deposit status";
+  const DEPOSIT_STATUS = "Show deposit status";
   const COMPLETE_RUNNING_DEPOSITS = "Complete current deposits";
   const GENERATE_PROOF = "Generate proof";
   const WITHDRAW ="Withdraw";
