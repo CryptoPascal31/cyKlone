@@ -29,12 +29,11 @@ class CyKlone
     if(this.already_init)
       return;
 
-    console.log("Initializing")
+    console.log("Initializing Circuits...")
     const [zok, cm, cw, pk ] = await Promise.all([zok_init(),
                                                  this.resource_loader("zkp/commitment_hasher.out").then((x) => Uint8Array.from(x)),
                                                  this.resource_loader("zkp/withdraw.out").then((x) => Uint8Array.from(x)),
                                                  this.resource_loader("zkp/proving.key").then((x) => Uint8Array.from(x))])
-    console.log("Completed")
     this.zokrates = zok;
     this.circuit_commit_hasher = cm;
     this.circuit_withdraw = cw;
