@@ -74,6 +74,22 @@ class CyKlone
                               (/ (at 'current-level merkle-data) COMPUTED-LEVELS-PER-ROUND)))`)
   }
 
+  pool_data()
+  {
+      return this.kadena_local(`(use ${MODULE})
+                                (+ {'fees:FEES}
+                                   (get-state "${this.pool}"))`)
+             .then((x) => ({pool_name:this.pool,
+                            deposit_amount:x['deposit-amount']*1.0,
+                            deposit_fees:x['fees'],
+                            withdrawals:x['withdrawal-count'].int,
+                            total_deposits:x['deposit-count'].int,
+                            processed_deposits:x['current-rank'].int,
+                            queued_deposits:x['deposit-queue'].length,
+                            deposit_progress: `${x['merkle-tree-data']['current-level'].int/3}/6`
+                            }))
+  }
+
   compute_deposit_data(bip39_phrase, password)
   {
     if (! validateMnemonic(bip39_phrase))

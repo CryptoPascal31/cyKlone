@@ -51,13 +51,32 @@ const cyKlone = new CyKlone(local_pact, local_read);
 const builder = new CyKloneTransactionBuilder(local_pact, NETWORK, CHAIN);
 
 
-async function set_pool()
+function print_pool_data(long_print=false)
 {
-  const {selected_pool} = await inquirer.prompt([{type:"list", name:"selected_pool", message:"Select Pool:",
-                                         choices: AVAILABLE_POOLS}])
-  cyKlone.pool = selected_pool;
-  builder.pool = selected_pool;
-  console.log("Selected Pool: " +chalk.blue(selected_pool))
+  return cyKlone.pool_data()
+                .then((data) => {
+                  console.log(chalk.magenta("--------------------------------------------"));
+                  console.log("Selected Pool: " + chalk.blue(data.pool_name));
+                  console.log("Deposit amount: " +chalk.blue(data.deposit_amount.toFixed(2)));
+                  console.log("Deposit Fees: " +chalk.blue(data.deposit_fees));
+                  if(long_print)
+                  {
+                    console.log("Total deposits: " +chalk.blue(data.total_deposits));
+                    console.log("Processed deposits: " +chalk.blue(data.processed_deposits));
+                    console.log("Queued deposits: " +chalk.blue(data.queued_deposits));
+                    console.log("Current deposit processing: " +chalk.blue(data.deposit_progress));
+                    console.log("Total withdrawals: " +chalk.blue(data.withdrawals));
+                  }
+                  console.log(chalk.magenta("--------------------------------------------"));})
+}
+
+function set_pool()
+{
+  return inquirer.prompt([{type:"list", name:"selected_pool", message:"Select Pool:",
+                           choices: AVAILABLE_POOLS}])
+                 .then((resp) => { cyKlone.pool = resp.selected_pool;
+                                   builder.pool = resp.selected_pool;})
+                 .then(print_pool_data)
 }
 
 
@@ -152,7 +171,8 @@ async function create_withdrawal_relayer_transaction()
 async function main_menu()
 {
   const EXIT = "Exit";
-  const SELECT_POOL = "Select pool"
+  const SELECT_POOL = "Select pool";
+  const PRINT_POOL_DATA = "Get pool data";
   const UPDATE_LOCAL_DB = "Update local database";
   const GENERATE_COMMITMENT = "Generate commitment";
   const DEPOSIT = "Create Deposit transaction";
@@ -166,6 +186,7 @@ async function main_menu()
     console.log("")
     const answer = await inquirer.prompt([{type:"list", name:"menu_item", message:"Menu:",
                                            choices: [SELECT_POOL,
+                                                     PRINT_POOL_DATA,
                                                      UPDATE_LOCAL_DB,
                                                      DEPOSIT,
                                                      GENERATE_COMMITMENT,
@@ -183,6 +204,9 @@ async function main_menu()
       {
         case SELECT_POOL:
           await set_pool();
+          break;
+        case PRINT_POOL_DATA:
+          await print_pool_data(true);
           break;
         case UPDATE_LOCAL_DB:
           await update_merkle_tree();
