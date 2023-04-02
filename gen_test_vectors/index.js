@@ -4,16 +4,11 @@ import { promises} from 'fs'
 import {hash} from '@kadena/cryptography-utils'
 
 const MNEMONIC = "obscure vivid ill elite sister evoke faculty accident slide alter kiwi captain"
-
 const RELAY_MODULE = "free.cyKlone-relay-v0"
-
 const MAIN_WITHDRAWER = "bob"
-
 const NO_POOL = "";
 
 const compute_cap_guard_principal = (account) => "c:" + hash(`${RELAY_MODULE}.RELAY"${account}"`)
-
-
 
 const PROOFS_TO_GENERATE = {
 '0': [0, 1, 19],
@@ -50,8 +45,6 @@ const cyKlone = new CyKlone(nothing, local_read, false);
 cyKlone.pool = NO_POOL;
 var deposit_data;
 
-
-
 async function gen_proof(withdrawer, deposit_index, tree_size)
 {
   console.log(` ${deposit_index} => ${tree_size}`)
@@ -61,8 +54,6 @@ async function gen_proof(withdrawer, deposit_index, tree_size)
   cyKlone.trees[NO_POOL] = testTree;
   return await cyKlone.compute_withdrawal_data(withdrawer, MNEMONIC, deposit_index.toString())
 }
-
-
 
 function gen_pact_proof(deposit_index, tree_size)
 {
@@ -75,7 +66,6 @@ function gen_pact_proof(deposit_index, tree_size)
 function gen_pact_proof_relay(deposit_index, tree_size)
 {
   const relayer = compute_cap_guard_principal(MAIN_WITHDRAWER)
-
   console.log(relayer)
   return gen_proof(relayer, deposit_index, tree_size)
          .then( (x) =>[`(defconst WITHDRAW_RELAY_${deposit_index}_${tree_size}_NULL:string "${x.nullifier_hash}")`,
@@ -83,11 +73,8 @@ function gen_pact_proof_relay(deposit_index, tree_size)
                         `(defconst WITHDRAW_RELAY_${deposit_index}_${tree_size}_PROOF:string "${x.proof}")`])
 }
 
-
-
 async function main()
 {
-
   await cyKlone.init()
 
   console.log("Generate deposits")
@@ -125,7 +112,6 @@ async function main()
 ; -------------------------- RELAY WITHDRAWAL ----------------------------------
   ${pact_withd_relay_list.join('\n  ')}
 )
-`
   await promises.writeFile("test-vectors.pact", pact_code)
 }
 
