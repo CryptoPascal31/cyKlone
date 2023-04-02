@@ -112,7 +112,7 @@ class CyKloneTransactionBuilder
     const tmp_key = genKeyPair();
 
     cmd.code = `(${MODULE}.work)`
-    cmd.setMeta({sender:gas_payer, chainId: this.chain, gasLimit: gas_limit, gasPrice:gas_price}, this.network);
+    cmd.setMeta({ttl:600, sender:gas_payer, chainId: this.chain, gasLimit: gas_limit, gasPrice:gas_price}, this.network);
     cmd.addCap(`${WORK_GAS_STATION}.GAS_PAYER`, tmp_key.publicKey, "", PACT_ZERO.toPactInteger(), PACT_ZERO.toPactDecimal())
     cmd.addData({pool:this.pool})
     const {hash} = cmd.createCommand()
