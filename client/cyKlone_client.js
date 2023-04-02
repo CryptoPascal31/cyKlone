@@ -119,10 +119,12 @@ async function get_deposit_state()
 
   if(validateMnemonic(input))
     status = await cyKlone.init()
-                   .then(() => inquirer.prompt([{type:"input", name:"password", message:"Password to protect your deposit:" }])  )
+                   .then(() => inquirer.prompt([{type:"input", name:"password", message:"Password to protect your deposit:" }]))
                    .then((r) => cyKlone.deposit_state(cyKlone.compute_deposit_data(input, r.password).commitment_str))
-  else
+  else if(input.length == 43)
     status = await cyKlone.deposit_state(input);
+  else
+    throw Error("Not a mnemonic nor a commitment")
 
   console.log("Status:" + chalk.blue(status))
 }
