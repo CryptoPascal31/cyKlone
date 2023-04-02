@@ -96,7 +96,7 @@ class CyKlone
                                 (bind (get-deposit-data "${commitment}" ) {'rank:=rank}
                                   (cond
                                     ((contains (as-int "${commitment}") queue) "In queue")
-                                    ((= rank -1) "Deposit unknown")
+                                    ((= rank -1) "Deposit not found")
                                     ((> process-rank rank) "Completed")
                                     "Processing")))`)
   }
