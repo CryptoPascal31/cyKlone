@@ -97,7 +97,7 @@ class CyKlone
                                   (cond
                                     ((contains (as-int "${commitment}") queue) "In queue")
                                     ((= rank -1) "Deposit not found")
-                                    ((> process-rank rank) "Completed")
+                                    ((> process-rank rank) (format "Completed at rank {}" [rank]))
                                     "Processing")))`)
   }
 
