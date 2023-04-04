@@ -56,9 +56,11 @@ class CyKloneTransactionBuilder
     const {amount, reserve} = await this.deposit_paramaters();
     const pact_amount = new PactNumber(amount)
 
-    cmd.code = `(${MODULE}.deposit "${account}" "${deposit_data.commitment_str}")`
+    cmd.code = `(${MODULE}.deposit (read-string 'depositor) (read-string 'commitment))`
     cmd.setMeta({sender:account, chainId: this.chain, gasLimit: 3500}, this.network);
-    cmd.addData({pool:this.pool})
+    cmd.addData({pool:this.pool,
+                 depositor:account,
+                 commitment:deposit_data.commitment_str})
     cmd.addCap('coin.TRANSFER', account_key, account, reserve, pact_amount.toPactDecimal())
     cmd.addCap('coin.GAS', account_key)
     return cmd
@@ -88,9 +90,10 @@ class CyKloneTransactionBuilder
       Just create a random key to sign the capability */
     const tmp_key = genKeyPair();
 
-    cmd.code = `(${RELAY_MODULE}.withdraw-create-relay "${final_account}" (read-keyset 'ks) (read-string 'nullifier) (read-string 'root) (read-string 'proof))`
+    cmd.code = `(${RELAY_MODULE}.withdraw-create-relay (read-string 'receiver) (read-keyset 'receiver_keyset) (read-string 'nullifier) (read-string 'root) (read-string 'proof))`
     cmd.setMeta({sender:gas_payer, chainId: this.chain, gasLimit: gas_limit, gasPrice:gas_price}, this.network);
-    cmd.addData({ks:{pred:"keys-all", keys:[final_account_key]},
+    cmd.addData({receiver:final_account,
+                 receiver_keyset:{pred:"keys-all", keys:[final_account_key]},
                  pool:this.pool,
                  nullifier:withdrawal_data.nullifier_hash,
                  root:withdrawal_data.root,
