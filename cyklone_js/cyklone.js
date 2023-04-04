@@ -17,28 +17,45 @@ class CyKlone
     this.check_roots_on_chain = check_roots_on_chain;
     this.trees = {};
     this.zokrates = null;
-    this.circuit_commit_hasher = null;
-    this.circuit_withdraw = null;
-    this.proving_key = null;
-    this.already_init = false;
+    this.binaries = new Map()
     this.pool = "";
   }
 
-  async init()
+  init()
   {
-    if(this.already_init)
-      return;
+    if(this.zokrates)
+      return Promise.resolve()
+    console.log("Initializing Zokrates...");
+    return zok_init().then((x) => {this.zokrates = x;});
+  }
 
-    console.log("Initializing Circuits...")
-    const [zok, cm, cw, pk ] = await Promise.all([zok_init(),
-                                                 this.resource_loader("zkp/commitment_hasher.out").then((x) => Uint8Array.from(x)),
-                                                 this.resource_loader("zkp/withdraw.out").then((x) => Uint8Array.from(x)),
-                                                 this.resource_loader("zkp/proving.key").then((x) => Uint8Array.from(x))])
-    this.zokrates = zok;
-    this.circuit_commit_hasher = cm;
-    this.circuit_withdraw = cw;
-    this.proving_key = pk;
-    this.already_init = true
+  load_binary(name)
+  {
+    if(this.binaries.has(name))
+      return this.binaries.get(name);
+    else
+    {
+      console.log("Loading "+name)
+      return this.resource_loader(name)
+             .then((data) => this.binaries.set(name, Uint8Array.from(data)))
+             .then((mp) => mp.get(name))
+    }
+  }
+
+
+  get commitment_hasher()
+  {
+    return this.load_binary("zkp/commitment_hasher.out");
+  }
+
+  get proving_key()
+  {
+    return this.load_binary("zkp/proving.key");
+  }
+
+  get circuit_withdraw()
+  {
+      return this.load_binary("zkp/withdraw.out");
   }
 
   get tree()
@@ -101,7 +118,7 @@ class CyKlone
                                     "Processing")))`)
   }
 
-  compute_deposit_data(bip39_phrase, password)
+  async compute_deposit_data(bip39_phrase, password)
   {
     if (! validateMnemonic(bip39_phrase))
       throw new Error('Invalid Mnemonic');
@@ -118,7 +135,7 @@ class CyKlone
     /* Use the commit_hasher circuit to compute the commitment. This could have
       been done in JS as well. But by using the ZoKrates circuit  we are sure that
        the commitment is 100 % compatible with the withdrawal circuit */
-    const { witness, output } = this.zokrates.computeWitness(this.circuit_commit_hasher, [secret, nullifier])
+    const { witness, output } = this.zokrates.computeWitness(await this.commitment_hasher, [secret, nullifier])
     const commitment = JSON.parse(output)[0]
 
     return {secret:secret, nullifier:nullifier, commitment:commitment, commitment_str:int_to_b64(commitment)}
@@ -132,7 +149,7 @@ class CyKlone
                    .then(()=>this.tree.update())
 
     /* Get the secret, nullifier and commitment from the mnemonic */
-    const data = this.compute_deposit_data(bip39_phrase, password);
+    const data = await this.compute_deposit_data(bip39_phrase, password);
 
     data.account = account;
 
@@ -161,7 +178,7 @@ class CyKlone
     data.indexWord = format_index_word(path.pathIndices)
 
     /* Run the circuit => to obtain the nullifier hash (Pedersen), and the root */
-    const { witness, output }  = this.zokrates.computeWitness(this.circuit_withdraw, [data.account_hash, data.secret, data.nullifier, ...data.path, data.indexWord]);
+    const { witness, output }  = this.zokrates.computeWitness(await this.circuit_withdraw, [data.account_hash, data.secret, data.nullifier, ...data.path, data.indexWord]);
     const [nullifier_hash, computed_root] = JSON.parse(output);
 
     /* Sanity check => Verifit that the root determined by the circuit matches
@@ -181,7 +198,7 @@ class CyKlone
     }
 
     /* And finally compute the ZK proof */
-    const proof = this.zokrates.generateProof(this.circuit_withdraw, witness, this.proving_key);
+    const proof = this.zokrates.generateProof(await this.circuit_withdraw, witness, await this.proving_key);
     data.proof = encode_proof(proof.proof);
 
     return data;

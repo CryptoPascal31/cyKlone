@@ -78,8 +78,10 @@ async function main()
   await cyKlone.init()
 
   console.log("Generate deposits")
-  deposit_data = Array.from({length: 50}, (x, i) => i)
-                       .map( (x)=> cyKlone.compute_deposit_data(MNEMONIC, x.toString()))
+
+  deposit_data = [];
+  for(let val of Array.from({length: 50}, (x, i) => i))
+    deposit_data.push(await cyKlone.compute_deposit_data(MNEMONIC, val.toString()))
 
   const pact_deposits_list = deposit_data.map( (x,i) => `(defconst DEPOSIT_${i}:string "${x.commitment_str}")`)
 

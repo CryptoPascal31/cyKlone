@@ -102,13 +102,19 @@ async function gen_deposit()
   console.log("")
 
   const {password} = await inquirer.prompt([{type:"input", name:"password", message:"Password to protect your deposit:" }])
-  return cyKlone.compute_deposit_data(mnemonic, password);
+  return await cyKlone.compute_deposit_data(mnemonic, password);
+}
+
+function print_commitment(data)
+{
+  console.log("Commitment: " +chalk.blue(data.commitment_str) + ` (${data.commitment})`)
+  return data
 }
 
 function generate_commitment()
 {
   return gen_deposit()
-         .then((deposit_data) => {console.log("Commitment: " +chalk.blue(deposit_data.commitment_str))})
+         .then(print_commitment)
 }
 
 async function get_deposit_state()
@@ -120,7 +126,9 @@ async function get_deposit_state()
   if(validateMnemonic(input))
     status = await cyKlone.init()
                    .then(() => inquirer.prompt([{type:"input", name:"password", message:"Password to protect your deposit:" }]))
-                   .then((r) => cyKlone.deposit_state(cyKlone.compute_deposit_data(input, r.password).commitment_str))
+                   .then((r) => cyKlone.compute_deposit_data(input, r.password))
+                   .then(print_commitment)
+                   .then((data) => cyKlone.deposit_state(data.commitment_str))
   else if(input.length == 43)
     status = await cyKlone.deposit_state(input);
   else
@@ -132,7 +140,7 @@ async function get_deposit_state()
 async function create_deposit_transaction()
 {
   const deposit_data = await gen_deposit()
-  console.log("Commitment: " +chalk.blue(deposit_data.commitment_str))
+                       .then(print_commitment)
   const {account} = await inquirer.prompt([{type:"input", name:"account", message:"Depositor account:"}])
   await builder.build_deposit(account, deposit_data).then(export_yaml_trx);
 }
