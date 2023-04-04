@@ -112,6 +112,7 @@ async function main()
 ; -------------------------- RELAY WITHDRAWAL ----------------------------------
   ${pact_withd_relay_list.join('\n  ')}
 )
+`
   await promises.writeFile("test-vectors.pact", pact_code)
 }
 
