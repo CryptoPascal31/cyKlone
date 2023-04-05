@@ -1,5 +1,5 @@
 (module cyKlone-v0-multipool UPGRADE-MODULE
-  (defconst VERSION:string "0.31")
+  (defconst VERSION:string "0.32")
   (defconst MODULE-FREEZE-DATE (time "2023-10-30T00:00:00Z"))
 
   (use free.util-math [xEy])
@@ -100,7 +100,7 @@
 
   ; -------------------------- ACCOUNTS MANAGEMNT ------------------------------
   ;-----------------------------------------------------------------------------
-  ; Guard to locking the reserve
+  ; Guard for locking the reserve
   (defconst RESERVE-GUARD:guard (create-capability-guard (RESERVE-SPEND)))
 
   ; Reserve account name
@@ -293,11 +293,12 @@
 
       ; Transfer one part to the gas station for future work
       (with-capability (FUND-GAS-STATION)
-        ; We install more transfer capability than needed, because it allow
+        ; We install more transfer capability than needed, because it allows
         ; to make several deposits in the same transaction. This is not 100% clean
-        ; However it should ol as the reseve is protected by the cap guard.
+        ; However it should be OK as the reseve is protected by the cap guard.
         (install-capability (coin.TRANSFER RESERVE WORK-GAS-STATION 1.0))
         (coin.transfer RESERVE WORK-GAS-STATION FEES))
+
       ; Update the data
       (update pool-state (get-pool)
               {'deposit-count: (++ count), ; Increment the deposit count
@@ -333,24 +334,28 @@
     (insert nullifiers nullifier-hash {'withdrawn:true})
   )
 
-  (defun withdraw-create (dst-account:string dst-guard:guard nullifier-hash:string root:string proof:string)
-    @doc "Public function to do a withdrawal using internally (coin.transfer-create)"
-    (with-capability (WITHDRAWAL)
-      (with-read pool-state (get-pool) {'deposit-amount:=amount}
-          (enforce-withdraw (get-pool) dst-account nullifier-hash root proof)
-          (install-capability (coin.TRANSFER RESERVE dst-account amount))
-          (coin.transfer-create RESERVE dst-account dst-guard amount)
-          amount))
-  )
-
-  (defun withdraw (dst-account:string nullifier-hash:string root:string proof:string)
-    @doc "Public function to do a withdrawal using internally (coin.transfer)"
-    (with-capability (WITHDRAWAL)
-      (with-read pool-state (get-pool) {'deposit-amount:=amount}
+  (defun withdraw-create:decimal (dst-account:string dst-guard:guard nullifier-hash:string root:string proof:string)
+    @doc "Public function to do a withdrawal using internally (coin.transfer-create) \
+        \ Returns the withdrawn amount => Useful for the relayer"
+    (with-read pool-state (get-pool) {'deposit-amount:=amount}
+      (with-capability (WITHDRAWAL)
         (enforce-withdraw (get-pool) dst-account nullifier-hash root proof)
         (install-capability (coin.TRANSFER RESERVE dst-account amount))
-        (coin.transfer RESERVE dst-account amount)
-        amount))
+        (coin.transfer-create RESERVE dst-account dst-guard amount))
+      ; Return the withdrawn amount
+      amount)
+  )
+
+  (defun withdraw:decimal (dst-account:string nullifier-hash:string root:string proof:string)
+    @doc "Public function to do a withdrawal using internally (coin.transfer \
+        \ Returns the withdrawn amount => Useful for the relayer"
+    (with-read pool-state (get-pool) {'deposit-amount:=amount}
+      (with-capability (WITHDRAWAL)
+        (enforce-withdraw (get-pool) dst-account nullifier-hash root proof)
+        (install-capability (coin.TRANSFER RESERVE dst-account amount))
+        (coin.transfer RESERVE dst-account amount))
+      ; Return the withdrawn amount
+      amount)
   )
 
 
@@ -365,11 +370,9 @@
     @doc "Return all deposits in a rank range. A sorted list is returned, starting by rank-min"
     (let ((filter-func (lambda (k obj) (and? (where 'pool (= pool))
                                              (where 'rank (and? (<= rank-min)
-                                                                (>= rank-max)))
-                                             obj)))
-          (map-func (lambda (k obj) {'i:(at 'rank obj), 'v:k})))
-
-      (map (at 'v ) (sort ['i] (fold-db deposits filter-func map-func))))
+                                                                (>= rank-max))) obj)))
+          (map-func (lambda (k obj) {'rank:(at 'rank obj), 'com:k})))
+      (map (at 'com ) (sort ['rank] (fold-db deposits filter-func map-func))))
   )
 
   (defun get-deposit-data:object{deposit-schema} (commitment:string)
