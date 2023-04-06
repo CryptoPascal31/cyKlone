@@ -1,5 +1,5 @@
 (module cyKlone-v0-multipool UPGRADE-MODULE
-  (defconst VERSION:string "0.32")
+  (defconst VERSION:string "0.33")
   (defconst MODULE-FREEZE-DATE (time "2023-10-30T00:00:00Z"))
 
   (use free.util-math [xEy])
@@ -313,25 +313,32 @@
     @doc "Internal function only, do all common check to be sure that the withdrawal is legit \
        \  + Increment withdrawals counter"
     (require-capability (WITHDRAWAL))
-    ; Check that that the nullifier was never been seen before (prevent double withdrawal)
-    (with-default-read nullifiers nullifier-hash {'withdrawn:false} {'withdrawn:=x}
-      (enforce (not x) "Element already withdrawn"))
+    ;--- IMPORTANT REMARK => The same integer can have different base64 representations. Thats why
+    ; it's necessary to normalize the nullifier by converting way and back  (string -> int -> string) before storing
+    ; it in the table. Otherwise, this property could be exploited to withdraw twice.
 
-    ; Check that the provided root is known by the contract
-    (with-read pool-state pool {'last-known-roots:=known-roots}
-      (enforce (contains (as-int root) known-roots) "Merkle tree root unknown"))
+    ; Convert everything to int => By convention every variables starting with i- will be integers
+    (let ((i-nullifier-hash (as-int nullifier-hash))
+          (i-root (as-int root))
+          (i-account-hash (hash-bn128 dst-account)))
 
-    ;Check ZK Proof
-    (let ((account-hash (hash-bn128 dst-account))
-          (outputs (map (as-int) [nullifier-hash root])))
-      (enforce (verify account-hash outputs proof) "ZK Prof does not match"))
+      ; Check that that the nullifier was never been seen before (prevent double withdrawal)
+      (with-default-read nullifiers (as-string i-nullifier-hash) {'withdrawn:false} {'withdrawn:=x}
+        (enforce (not x) "Element already withdrawn"))
+
+      ;Check that the provided root is known by the contract
+      (with-read pool-state pool {'last-known-roots:=known-roots}
+        (enforce (contains i-root known-roots) "Merkle tree root unknown"))
+
+      ;Check ZK Proof
+      (enforce (verify i-account-hash [i-nullifier-hash i-root] proof) "ZK Prof does not match")
+
+      ; Insert the nullifier to prevent future double withdrawal
+      (insert nullifiers (as-string i-nullifier-hash) {'withdrawn:true}))
 
     ; Increment the withdrawal-count
     (with-read pool-state pool {'withdrawal-count:=count}
       (update pool-state pool {'withdrawal-count: (++ count)}))
-
-    ; Insert the nullifier to prevent future double withdrawal
-    (insert nullifiers nullifier-hash {'withdrawn:true})
   )
 
   (defun withdraw-create:decimal (dst-account:string dst-guard:guard nullifier-hash:string root:string proof:string)
