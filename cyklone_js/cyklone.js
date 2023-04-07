@@ -112,10 +112,11 @@ class CyKlone
   {
     return this.kadena_local(`(use ${MODULE})
                               (bind (get-state "${this.pool}") {'current-rank:=process-rank, 'deposit-queue:=queue}
-                                (bind (get-deposit-data "${commitment}" ) {'rank:=rank}
+                                (bind (get-deposit-data "${commitment}" ) {'rank:=rank, 'pool:=pool}
                                   (cond
                                     ((contains (as-int "${commitment}") queue) "In queue")
                                     ((= rank -1) "Deposit not found")
+                                    ((!= pool "${this.pool}") "Deposit not found in that pool")
                                     ((> process-rank rank) (format "Completed at rank {}" [rank]))
                                     "Processing")))`)
   }
