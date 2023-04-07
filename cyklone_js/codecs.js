@@ -7,7 +7,18 @@ const P = "218882428718392752222464057452572750885483644004160343436982041865758
 
 export function int_to_b64(x)
 {
-  const buffer = new Uint8Array(32)
+  let buffer = new Uint8Array(32)
+  S.toRprBE(buffer, 0, S.e(x), 32)
+  /* Workaround in case if the number is too short, and the first elements of the
+     (BE) array are null */
+  while(buffer[0] == 0)
+    buffer = buffer.subarray(1);
+  return base64UrlEncodeArr(buffer)
+}
+
+export function int256_to_b64(x)
+{
+  let buffer = new Uint8Array(32)
   S.toRprBE(buffer, 0, S.e(x), 32)
   return base64UrlEncodeArr(buffer)
 }
@@ -31,5 +42,5 @@ export function hash_dec(x)
 export function encode_proof(proof)
 {
   const proof_tab = [...proof.a, ...proof.b[0], ...proof.b[1], ...proof.c];
-  return proof_tab.map(int_to_b64).join("");
+  return proof_tab.map(int256_to_b64).join("");
 }
