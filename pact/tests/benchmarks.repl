@@ -25,7 +25,7 @@
 (create-table pool-state)
 (create-table nullifiers)
 (create-table deposits)
-(init)
+(add-pool "10KDA" 10.0)
 (coin.create-account WORK-GAS-STATION basic-guards.GUARD_SUCCESS)
 (commit-tx)
 
@@ -47,12 +47,15 @@
 (print "--------------------------------------------------------------------")
 (print "                       BENCHMARKS                                   ")
 (print "--------------------------------------------------------------------")
+
+(env-data {'pool:"10KDA"})
+
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
 
 ;Do the deposit
-(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE DENOMINATION)]}])
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 11.0)]}])
 
 (env-gas 0)
 (deposit "alice" DEPOSIT_0)
@@ -78,7 +81,7 @@
 (commit-tx)
 
 (begin-tx)
-(use free.cyKlone-v0-10)
+(use free.cyKlone-v0-multipool)
 (use test-vectors)
 
 (env-gas 0)
@@ -89,7 +92,7 @@
 (begin-tx)
 (use free.cyKlone-relay-v0)
 (use test-vectors)
-(env-data {'ks:["bob-key"]})
+(env-data {'ks:["bob-key"], 'pool:"10KDA"})
 (env-gas 0)
 (withdraw-create-relay "bob" (read-keyset 'ks) WITHDRAW_RELAY_0_0_NULL WITHDRAW_RELAY_0_0_ROOT WITHDRAW_RELAY_0_0_PROOF)
 (print (format "Relay withdrawal:   {}" [(env-gas)]))
