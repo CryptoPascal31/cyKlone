@@ -13,6 +13,7 @@
     "@kadena/pactjs": "^0.1.4",
     "bip39": "^3.1.0",
     "circomlibjs": "^0.1.7",
+    "ffjavascript": "^0.2.57",
     "fixed-merkle-tree": "https://github.com/tornadocash/fixed-merkle-tree",
     "lz4": "^0.6.5",
     "zokrates-js": "^1.1.6"

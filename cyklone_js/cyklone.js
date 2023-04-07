@@ -6,6 +6,7 @@ import {int_to_b64, hash_dec, encode_proof} from "./codecs.js"
 import {initialize as zok_init} from 'zokrates-js';
 import {validateMnemonic, mnemonicToSeedSync} from 'bip39'
 import {Scalar as S} from 'ffjavascript'
+import {Pedersen512bits} from './pedersen_hash.js';
 
 const P = "21888242871839275222246405745257275088548364400416034343698204186575808495617";
 
@@ -20,14 +21,17 @@ class CyKlone
     this.zokrates = null;
     this.binaries = new Map()
     this.pool = "";
+    this.hasher = new Pedersen512bits();
   }
 
   init()
   {
     if(this.zokrates)
       return Promise.resolve()
-    console.log("Initializing Zokrates...");
-    return zok_init().then((x) => {this.zokrates = x;});
+    console.log("Initializing CyKlone librairies...");
+    return this.hasher.init()
+           .then(zok_init)
+           .then((x) => {this.zokrates = x;})
   }
 
   load_binary(name)
@@ -135,14 +139,27 @@ class CyKlone
     /* And the next 32 bytes is the nullifier */
     const nullifier = S.mod(S.fromRprBE(seed, 32, 32), P).toString();
 
-    /* Use the commit_hasher circuit to compute the commitment. This could have
-      been done in JS as well. But by using the ZoKrates circuit  we are sure that
-       the commitment is 100 % compatible with the withdrawal circuit */
-    const { witness, output } = this.zokrates.computeWitness(await this.commitment_hasher, [secret, nullifier])
-    const commitment = JSON.parse(output)[0]
+    /* Compute the commitment from JS (Perdesen512bits class) */
+    const commitment = this.hasher.hash_commitment(secret, nullifier);
 
     return {secret:secret, nullifier:nullifier, commitment:commitment, commitment_str:int_to_b64(commitment)}
   }
+
+  compute_nullifier(bip39_phrase, password)
+  {
+    if (! validateMnemonic(bip39_phrase))
+      throw new Error('Invalid Mnemonic');
+
+    /* Obtain a 64 bytes words from the mnemonix */
+    const seed = mnemonicToSeedSync(bip39_phrase, password);
+
+    const nullifier = S.mod(S.fromRprBE(seed, 32, 32), P).toString();
+
+    /* Compute the nullifier from JS (Perdesen512bits class) */
+    return int_to_b64(this.hasher.hash_nullifier(nullifier))
+  }
+
+
 
 
   async compute_withdrawal_data(account, bip39_phrase, password)
