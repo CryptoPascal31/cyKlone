@@ -27,6 +27,8 @@ This project uses the following tools:
 
 ## Principle of operation
 
+### Modules
+
 The protocol is organized in several modules:
    - `cyKlone-mutipool-V0`  => main module, manages most stuffs
    - `poseidon-hash-v1` and `poseidon-constants-v1` => Compute the Poseidon Hash
@@ -36,7 +38,14 @@ There are 2 helpers modules:
    - `cyKlone-work-gas-station` => Gas station to pay gas for the `(work)` transactions.
    - `cyKlone-relay-v0` => Gas station and intermediate account to let users withdraw while paying gas anonymously.
 
+![image info](./doc/img/cyKlone_modules.png)
+
+
+### Deposits/Withdrawal flow
+
 ![image info](./doc/img/cyKlone_diagram.png)
+
+
 
 
 ## TODO
