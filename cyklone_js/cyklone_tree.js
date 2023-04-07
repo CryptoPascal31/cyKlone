@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 import {MODULE} from './pact_modules.js'
+import {decode as lz4_dec, encode as lz4_enc} from 'lz4'
 import {buildPoseidonReference} from "circomlibjs"
 import {MerkleTree} from "fixed-merkle-tree"
 import {b64_to_dec} from "./codecs.js"
@@ -27,7 +28,7 @@ class CyKloneTree
     const hashfn = (l, r) => {return F.toString(poseidon([l,r]),10) }
 
     return this.resource_loader(this.backup_filename)
-           .then((data) => {this.tree = MerkleTree.deserialize(JSON.parse(data), hashfn);
+           .then((data) => {this.tree = MerkleTree.deserialize(JSON.parse(lz4_dec(data)), hashfn);
                             console.log(`Merkle loaded with ${this.tree.elements.length} elements`);},
 
                      () => {this.tree = new MerkleTree(18, [],  {hashFunction:hashfn, zeroElement:ZERO});
@@ -37,7 +38,7 @@ class CyKloneTree
 
   get backup_filename()
   {
-    return `merkle_tree_${this.pool}.json`;
+    return `merkle_tree_${this.pool}.json.lz4`;
   }
 
   get_deposit_chunk(start, end)
