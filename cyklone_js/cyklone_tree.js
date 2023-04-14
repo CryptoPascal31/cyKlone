@@ -80,7 +80,7 @@ class CyKloneTree
 
   dump()
   {
-    return JSON.stringify(this.tree.serialize())
+    return lz4_enc(JSON.stringify(this.tree.serialize()))
   }
 
 }
