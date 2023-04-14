@@ -1,5 +1,5 @@
 (module cyKlone-relay-v0 GOVERNANCE
-  (defconst VERSION:string "0.2")
+  (defconst VERSION:string "0.22")
   (implements gas-payer-v1)
 
   (use free.util-math [xEy])
@@ -21,7 +21,7 @@
   (defconst TOTAL-GAS:decimal (* GAS-PRICE-MAX GAS-LIMIT-MAX))
 
 
-  (defconst ALLOWED-CODE:string "(free.cyKlone-relay-v0.withdraw-create-relay")
+  (defconst ALLOWED-CODE:string "(free.cyKlone-relay-v0.relay-withdraw-create")
 
   (defun gas-payer-account:string()
     GAS-PAYER-ACCOUNT)
@@ -65,23 +65,32 @@
   (defun relayer-account:string (dst-account:string)
     (create-principal (relayer-account-guard dst-account)))
 
-
-  (defun withdraw-create-relay (dst-account:string dst-guard:guard nullifier-hash:string root:string proof:string)
+  (defun --withdraw-to-relayer (dst-account:string  nullifier-hash:string root:string proof:string)
+    @doc "Common function to withdraw from cyKlone to a temporary account and refund the gas station"
     (let* ((relayer-act (relayer-account dst-account))
            (relayer-guard (relayer-account-guard dst-account))
            ; First step => withdraw to the relayer account
-           ; Remark: (withdraw-create) returns the withdrawn amount; we cas use it
-           (withdrawn-amount (withdraw-create relayer-act relayer-guard nullifier-hash root proof))
-           (final-amount (- withdrawn-amount TOTAL-GAS)))
+           ; Remark: (withdraw-create) returns the withdrawn amount; we will use it
+           (withdrawn-amount (withdraw-create relayer-act relayer-guard nullifier-hash root proof)))
 
+      ;Second step => Refun the Gas station
       (with-capability (RELAY dst-account)
-        ; Pay the final dst-account
-        (install-capability (coin.TRANSFER relayer-act dst-account final-amount))
-        (coin.transfer-create relayer-act dst-account dst-guard final-amount)
-
-        ; Refund the gas station
         (install-capability (coin.TRANSFER relayer-act (gas-payer-account) TOTAL-GAS))
-        (coin.transfer relayer-act (gas-payer-account) TOTAL-GAS)))
+        (coin.transfer relayer-act (gas-payer-account) TOTAL-GAS))
+
+        ;Finally the total withdrawable amount
+        (- withdrawn-amount TOTAL-GAS))
   )
 
+  (defun relay-withdraw-create (dst-account:string dst-guard:guard nullifier-hash:string root:string proof:string)
+    @doc "User callable function to withdraw from the relay account and make a transfer-create to the final user account"
+    ; First step => Withdraw to relay
+    (let* ((relayer-act (relayer-account dst-account))
+           (final-amount (--withdraw-to-relayer dst-account nullifier-hash root proof)))
+
+      ; Second step => Pay the user account
+      (with-capability (RELAY dst-account)
+        (install-capability (coin.TRANSFER relayer-act dst-account final-amount))
+        (coin.transfer-create relayer-act dst-account dst-guard final-amount)))
+  )
 )

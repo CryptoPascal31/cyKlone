@@ -68,7 +68,7 @@
 (env-data {'ks:["bob-key"], 'pool:"10KDA"})
 (print (format "Relayer account:{} -> {}" ["bob" (relayer-account "bob")]))
 (print (format "Total GAS: {}" [TOTAL-GAS]))
-(withdraw-create-relay "bob" (read-keyset 'ks) WITHDRAW_RELAY_0_0_NULL WITHDRAW_RELAY_0_0_ROOT WITHDRAW_RELAY_0_0_PROOF)
+(relay-withdraw-create "bob" (read-keyset 'ks) WITHDRAW_RELAY_0_0_NULL WITHDRAW_RELAY_0_0_ROOT WITHDRAW_RELAY_0_0_PROOF)
 (expect-that "Balance after withdraw" (< 1009.0) (coin.get-balance "bob"))
 (expect-that "Balance of gas station" (<= TOTAL-GAS) (coin.get-balance (gas-payer-account)))
 (commit-tx)
@@ -79,7 +79,7 @@
 (begin-tx)
 (use free.cyKlone-relay-v0)
 (env-chain-data { "gas-price":  0.00000001, "gas-limit": 36000})
-(env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-relay-v0.withdraw-create-relay \"bob\")" ]})
+(env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-relay-v0.relay-withdraw-create \"bob\")" ]})
 
 (test-capability (coin.GAS))
 (expect-failure "Fail bad gas" "Gas" (test-capability (GAS_PAYER "user" 0 0.0)))
@@ -89,7 +89,7 @@
 (begin-tx)
 (use free.cyKlone-relay-v0)
 (env-chain-data { "gas-price":  0.00000002, "gas-limit": 34000})
-(env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-relay-v0.withdraw-create-relay \"bob\")" ]})
+(env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-relay-v0.relay-withdraw-create \"bob\")" ]})
 
 (test-capability (coin.GAS))
 (expect-failure "Fail bad gas" "Gas" (test-capability (GAS_PAYER "user" 0 0.0)))
@@ -109,7 +109,7 @@
 (begin-tx)
 (use free.cyKlone-relay-v0)
 (env-chain-data { "gas-price":  0.00000001, "gas-limit": 34000})
-(env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-relay-v0.withdraw-create-relay \"bob\")" ]})
+(env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-relay-v0.relay-withdraw-create \"bob\")" ]})
 
 (test-capability (coin.GAS))
 (test-capability (GAS_PAYER "user" 0 0.0))

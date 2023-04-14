@@ -90,7 +90,7 @@ class CyKloneTransactionBuilder
       Just create a random key to sign the capability */
     const tmp_key = genKeyPair();
 
-    cmd.code = `(${RELAY_MODULE}.withdraw-create-relay (read-string 'receiver) (read-keyset 'receiver_keyset) (read-string 'nullifier) (read-string 'root) (read-string 'proof))`
+    cmd.code = `(${RELAY_MODULE}.relay-withdraw-create (read-string 'receiver) (read-keyset 'receiver_keyset) (read-string 'nullifier) (read-string 'root) (read-string 'proof))`
     cmd.setMeta({sender:gas_payer, chainId: this.chain, gasLimit: gas_limit, gasPrice:gas_price}, this.network);
     cmd.addData({receiver:final_account,
                  receiver_keyset:{pred:"keys-all", keys:[final_account_key]},
