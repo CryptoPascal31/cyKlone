@@ -36,9 +36,10 @@
 (init)
 (commit-tx)
 
-;; Load test vectors in the root namespace
+; Load test vectors and utils in the root namespace
 (begin-tx)
 (load "test-vectors.pact")
+(load "cyklone-utils.pact")
 (commit-tx)
 
 (env-data {'pool:"10KDA"})
@@ -53,12 +54,8 @@
 ;;; ----------------------- PROCESS 0DEPOSIT -----------------------------------
 (begin-tx)
 (use free.cyKlone-v0-multipool)
-(work)
-(work)
-(work)
-(work)
-(work)
-(work)
+(use cyKlone-utils)
+(repeat-N-work 6)
 (commit-tx)
 
 ;;; ----------------------- WITHDRAWAL WITH RELAY ------------------------------
