@@ -66,10 +66,10 @@
 
   (defun --withdraw-to-relayer (dst-account:string  nullifier-hash:string root:string proof:string)
     @doc "Common function to withdraw from cyKlone to a temporary account and refund the gas station"
+    ; First step => compute the accounts credentials and withdraw from cyKlone to the relayer account
+    ; Remark: (withdraw-create) returns the withdrawn amount; we will use it
     (let* ((relayer-act (relayer-account dst-account))
            (relayer-guard (relayer-account-guard dst-account))
-           ; First step => withdraw to the relayer account
-           ; Remark: (withdraw-create) returns the withdrawn amount; we will use it
            (withdrawn-amount (withdraw-create relayer-act relayer-guard nullifier-hash root proof)))
 
       ;Second step => Refun the Gas station
@@ -77,7 +77,7 @@
         (install-capability (coin.TRANSFER relayer-act (gas-payer-account) TOTAL-GAS))
         (coin.transfer relayer-act (gas-payer-account) TOTAL-GAS))
 
-        ;Finally the total withdrawable amount
+        ;Finally return the total withdrawable amount
         (- withdrawn-amount TOTAL-GAS))
   )
 
