@@ -20,12 +20,10 @@
 
   (defconst TOTAL-GAS:decimal (* GAS-PRICE-MAX GAS-LIMIT-MAX))
 
-
   (defconst ALLOWED-CODE:string "(free.cyKlone-relay-v0.relay-withdraw-create")
 
   (defun gas-payer-account:string()
     GAS-PAYER-ACCOUNT)
-
 
   (defcap GAS_PAYER:bool (user:string limit:integer price:decimal)
     (bind (read-msg) {'tx-type:=tx-type, 'exec-code:=exec-code}
@@ -55,6 +53,7 @@
     (require-capability (coin.GAS))
     (require-capability (ALLOW_GAS))
   )
+
 
   ; -----------------------  WITHDRAWAL CODE -----------------------------------
   (defcap RELAY (dst-account:string) true)
