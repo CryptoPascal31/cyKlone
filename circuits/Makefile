@@ -28,7 +28,7 @@ deploy_client: commitment_hasher.out withdraw.out proving.key
 	mkdir -p ${CLIENT_ZKP_DATA}
 	lz4 -f --best commitment_hasher.out ${CLIENT_ZKP_DATA}/commitment_hasher.out.lz4
 	lz4 -f --best withdraw.out ${CLIENT_ZKP_DATA}/withdraw.out.lz4
-	lz4 -f --best proving.key ${CLIENT_ZKP_DATA}/proving_key.lz4
+	lz4 -f --best proving.key ${CLIENT_ZKP_DATA}/proving.key.lz4
 
 clean:
 	rm -f .pact_zk_state
