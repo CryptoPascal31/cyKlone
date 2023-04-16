@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 import {CyKlone, CyKloneTransactionBuilder} from 'cyklone_js';
-import {PactCommand} from '@kadena/client'
+import {PactCommand, signWithChainweaver} from '@kadena/client'
 import {generateMnemonic, validateMnemonic} from 'bip39';
 import { promises} from 'fs'
 import inquirer from 'inquirer';
@@ -16,18 +16,23 @@ const AVAILABLE_POOLS = ["KDA_10", "KDA_100", "KDA_1000"];
 const API_SERVER = `${CHAINWEB}/chainweb/0.0/${NETWORK}/chain/${CHAIN}/pact`;
 const LOCAL_META = {chainId: CHAIN.toString(), gasLimit: 1000000};
 
-async function local_pact(pact_code)
+async function local_check(cmd)
 {
-  const cmd = new PactCommand();
-  cmd.code = pact_code;
-  cmd.setMeta(LOCAL_META, NETWORK);
   const resp =  await cmd.local(API_SERVER);
   if(resp.result.status !== 'success')
   {
     console.warn(resp);
-    throw Error(`Error in local call: ${pact_code}`);
+    throw Error(`Error in local call: ${cmd.pact_code}`);
   }
   return resp.result.data;
+}
+
+function local_pact(pact_code)
+{
+  const cmd = new PactCommand();
+  cmd.code = pact_code;
+  cmd.setMeta(LOCAL_META, NETWORK);
+  return local_check(cmd)
 }
 
 const local_read = (x) => promises.readFile("./"+x);
@@ -49,6 +54,37 @@ async function export_yaml_trx(cmd)
   console.log("Transaction written to => " + chalk.blue("tx.yaml"))
   console.log("It can be signed/submitted by Chainweaver's SigBuilder")
   console.log("or with 'kda sign tx.yaml -k', 'kda send tx.json'")
+}
+
+async function export_or_send(cmd)
+{
+  const EXPORT_TRANSACTION = "Export transaction";
+  const SEND_TRANSACTION = "Submit transaction to network";
+  console.log("");
+  const answer = await inquirer.prompt([{type:"list", name:"trx_item", message:"What to do now:",
+                                         choices: [EXPORT_TRANSACTION, SEND_TRANSACTION]}]);
+  if(answer.trx_item === EXPORT_TRANSACTION)
+    return await export_yaml_trx(cmd);
+  else
+    return await local_check(cmd)
+                 .then(() => cmd.send(API_SERVER))
+                 .then(() => console.log(`Request Key: ${cmd.requestKey}`))
+                 .then(() => cmd.pollUntil(API_SERVER))
+                 .then((x) => console.log(`Transaction status: ${x.status}`));
+}
+
+async function export_or_sign(cmd)
+{
+   const EXPORT_TRANSACTION = "Export transaction";
+   const SIGN = "Sign with chainweaver";
+   console.log("");
+   const answer = await inquirer.prompt([{type:"list", name:"trx_item", message:"What to do now:",
+                                          choices: [EXPORT_TRANSACTION, SIGN]}]);
+   if(answer.trx_item === EXPORT_TRANSACTION)
+     return await export_yaml_trx(cmd);
+   else
+     return await signWithChainweaver(cmd)
+                  .then((x) => export_or_send(x[0]));
 }
 
 const cyKlone = new CyKlone(local_pact, local_read);
@@ -142,7 +178,8 @@ async function create_deposit_transaction()
   const deposit_data = await gen_deposit()
                        .then(print_commitment)
   const {account} = await inquirer.prompt([{type:"input", name:"account", message:"Depositor account:"}])
-  await builder.build_deposit(account, deposit_data).then(export_yaml_trx);
+  await builder.build_deposit(account, deposit_data)
+        .then(export_or_sign);
 }
 
 async function send_work()
@@ -183,7 +220,7 @@ function create_withdrawal_transaction()
          .then(inquire_for_withdraw)
          .then((x) => cyKlone.compute_withdrawal_data(x.account, x.mnemonic, x.password))
          .then((data) => builder.build_withdrawal(data.account, data))
-         .then(export_yaml_trx);
+         .then(export_or_sign);
 }
 
 async function create_withdrawal_relayer_transaction()
@@ -194,7 +231,7 @@ async function create_withdrawal_relayer_transaction()
 
   await inquirer.prompt({type:"input", name:"account_key", message:"Acccount Key (single 'keys-all'):" })
                 .then((x) => builder.build_withdrawal_with_relay(data.final_acount, x.account_key, data))
-                .then(export_yaml_trx);
+                .then(export_or_send);
 }
 
 async function create_withdrawal_x_chain_relayer_transaction()
@@ -206,7 +243,7 @@ async function create_withdrawal_x_chain_relayer_transaction()
   await inquirer.prompt([{type:"input", name:"account_key", message:"Acccount Key (single 'keys-all'):" },
                          {type:"input", name:"target_chain", message:"Taget Chain:" }])
                 .then((x) => builder.build_withdrawal_with_relay(data.final_acount, x.account_key, data, x.target_chain))
-                .then(export_yaml_trx);
+                .then(export_or_send);
 }
 
 
