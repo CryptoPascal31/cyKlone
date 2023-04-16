@@ -82,7 +82,7 @@ class CyKloneTransactionBuilder
     return cmd;
   }
 
-  async build_withdrawal_with_relay(final_account, final_account_key, withdrawal_data)
+  async build_withdrawal_with_relay(final_account, final_account_key, withdrawal_data, target_chain=null)
   {
     const cmd = new PactCommand();
     const {gas_payer, gas_price, gas_limit}  = await this.get_relay_parameters()
@@ -90,7 +90,10 @@ class CyKloneTransactionBuilder
       Just create a random key to sign the capability */
     const tmp_key = genKeyPair();
 
-    cmd.code = `(${RELAY_MODULE}.relay-withdraw-create (read-string 'receiver) (read-keyset 'receiver_keyset) (read-string 'nullifier) (read-string 'root) (read-string 'proof))`
+    if(target_chain)
+      cmd.code = `(${RELAY_MODULE}.relay-withdraw-xchain (read-string 'receiver) (read-keyset 'receiver_keyset) "${target_chain}" (read-string 'nullifier) (read-string 'root) (read-string 'proof))`
+    else
+      cmd.code = `(${RELAY_MODULE}.relay-withdraw-create (read-string 'receiver) (read-keyset 'receiver_keyset) (read-string 'nullifier) (read-string 'root) (read-string 'proof))`
     cmd.setMeta({sender:gas_payer, chainId: this.chain, gasLimit: gas_limit, gasPrice:gas_price}, this.network);
     cmd.addData({receiver:final_account,
                  receiver_keyset:{pred:"keys-all", keys:[final_account_key]},

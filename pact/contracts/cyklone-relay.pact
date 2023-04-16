@@ -1,5 +1,5 @@
 (module cyKlone-relay-v0 GOVERNANCE
-  (defconst VERSION:string "0.22")
+  (defconst VERSION:string "0.23")
   (implements gas-payer-v1)
 
   (use free.util-math [xEy])
@@ -20,7 +20,9 @@
 
   (defconst TOTAL-GAS:decimal (* GAS-PRICE-MAX GAS-LIMIT-MAX))
 
-  (defconst ALLOWED-CODE:string "(free.cyKlone-relay-v0.relay-withdraw-create")
+  (defconst ALLOWED-WITHDRAW-CREATE:string "(free.cyKlone-relay-v0.relay-withdraw-create")
+
+  (defconst ALLOWED-WITHDRAW-XCHAIN:string "(free.cyKlone-relay-v0.relay-withdraw-xchain")
 
   (defun gas-payer-account:string()
     GAS-PAYER-ACCOUNT)
@@ -29,7 +31,9 @@
     (bind (read-msg) {'tx-type:=tx-type, 'exec-code:=exec-code}
       (enforce (= "exec" tx-type) "Inside an exec")
       (enforce (= 1 (length exec-code)) "Code incorrect for gas station")
-      (enforce (starts-with (first exec-code) ALLOWED-CODE) "Code incorrect for gas station"))
+      (enforce (or (starts-with (first exec-code) ALLOWED-WITHDRAW-CREATE)
+                   (starts-with (first exec-code) ALLOWED-WITHDRAW-XCHAIN))
+               "Code incorrect for gas station"))
 
     (bind (chain-data) {'gas-price:=gas-price, 'gas-limit:=gas-limit }
       (enforce (and (<= gas-price GAS-PRICE-MAX)
@@ -91,5 +95,17 @@
       (with-capability (RELAY dst-account)
         (install-capability (coin.TRANSFER relayer-act dst-account final-amount))
         (coin.transfer-create relayer-act dst-account dst-guard final-amount)))
+  )
+
+  (defun relay-withdraw-xchain (dst-account:string dst-guard:guard target-chain:string nullifier-hash:string root:string proof:string)
+    @doc "User callable function to withdraw from the relay account and make a transfer-create to the final user account"
+    ; First step => Withdraw to relay
+    (let* ((relayer-act (relayer-account dst-account))
+           (final-amount (--withdraw-to-relayer dst-account nullifier-hash root proof)))
+
+      ; Second step => Launch the X-chain transfer
+      (with-capability (RELAY dst-account)
+        (install-capability (coin.TRANSFER_XCHAIN relayer-act dst-account final-amount target-chain))
+        (coin.transfer-crosschain relayer-act dst-account dst-guard target-chain final-amount)))
   )
 )

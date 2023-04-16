@@ -197,6 +197,18 @@ async function create_withdrawal_relayer_transaction()
                 .then(export_yaml_trx);
 }
 
+async function create_withdrawal_x_chain_relayer_transaction()
+{
+  const data = await cyKlone.init()
+                     .then(inquire_for_withdraw)
+                     .then((x) => cyKlone.compute_withdrawal_data_with_relay(x.account, x.mnemonic, x.password))
+
+  await inquirer.prompt([{type:"input", name:"account_key", message:"Acccount Key (single 'keys-all'):" },
+                         {type:"input", name:"target_chain", message:"Taget Chain:" }])
+                .then((x) => builder.build_withdrawal_with_relay(data.final_acount, x.account_key, data, x.target_chain))
+                .then(export_yaml_trx);
+}
+
 
 async function main_menu()
 {
@@ -211,6 +223,7 @@ async function main_menu()
   const GENERATE_PROOF = "Generate proof";
   const WITHDRAW ="Withdraw";
   const WITHDRAW_RELAY ="Withdraw with relay";
+  const WITHDRAW_RELAY_XCHAIN ="Withdraw with relay X-chain";
 
   while(true)
   {
@@ -226,6 +239,7 @@ async function main_menu()
                                                      GENERATE_PROOF,
                                                      WITHDRAW,
                                                      WITHDRAW_RELAY,
+                                                     WITHDRAW_RELAY_XCHAIN,
                                                      EXIT]}])
     if(answer.menu_item === EXIT)
       break;
@@ -262,6 +276,9 @@ async function main_menu()
           break;
         case WITHDRAW_RELAY:
           await create_withdrawal_relayer_transaction()
+          break;
+        case WITHDRAW_RELAY_XCHAIN:
+          await create_withdrawal_x_chain_relayer_transaction();
           break;
       }
     }

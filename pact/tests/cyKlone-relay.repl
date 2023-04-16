@@ -43,19 +43,20 @@
 (commit-tx)
 
 (env-data {'pool:"10KDA"})
-;;; ----------------------- DEPOSIT ----------------------------------------
+;;; ----------------------- DEPOSITS ----------------------------------------
 (begin-tx)
 (use free.cyKlone-v0-multipool)
 (use test-vectors)
-(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 11.0)]}])
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 21.0)]}])
 (deposit "alice" DEPOSIT_0)
+(deposit "alice" DEPOSIT_1)
 (commit-tx)
 
 ;;; ----------------------- PROCESS 0DEPOSIT -----------------------------------
 (begin-tx)
 (use free.cyKlone-v0-multipool)
 (use cyKlone-utils)
-(repeat-N-work 6)
+(repeat-N-work 12)
 (commit-tx)
 
 ;;; ----------------------- WITHDRAWAL WITH RELAY ------------------------------
@@ -69,6 +70,27 @@
 (expect-that "Balance after withdraw" (< 1009.0) (coin.get-balance "bob"))
 (expect-that "Balance of gas station" (<= TOTAL-GAS) (coin.get-balance (gas-payer-account)))
 (commit-tx)
+
+;;; ----------------------- WITHDRAWAL X-CHAIN WITH RELAY ------------------------------
+(begin-tx)
+(use free.cyKlone-relay-v0)
+(use test-vectors)
+(env-data {'ks:["bob-key"], 'pool:"10KDA"})
+(print (format "Relayer account:{} -> {}" ["bob" (relayer-account "bob")]))
+(print (format "Total GAS: {}" [TOTAL-GAS]))
+(relay-withdraw-xchain "bob" (read-keyset 'ks) "5" WITHDRAW_RELAY_1_1_NULL WITHDRAW_RELAY_1_1_ROOT WITHDRAW_RELAY_1_1_PROOF)
+(expect-that "Balance of gas station" (<= TOTAL-GAS) (coin.get-balance (gas-payer-account)))
+
+; Check Pact state to confirm that exvrything worked
+(bind (at 'yield (pact-state)) {'amount:=ps_amount, 'receiver:=ps_receiver, 'receiver-guard:=ps_guard}
+  (expect-that "Good amount" (and? (< 9.9) (> 10.0)) ps_amount)
+  (expect "Good receiver" "bob" ps_receiver)
+  (expect "Good receiver guard" (read-keyset 'ks) ps_guard)
+)
+
+(commit-tx)
+
+
 
 
 ; --------------------------- TEST GAS STATION ---------------------------------
@@ -107,6 +129,17 @@
 (use free.cyKlone-relay-v0)
 (env-chain-data { "gas-price":  0.00000001, "gas-limit": 34000})
 (env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-relay-v0.relay-withdraw-create \"bob\")" ]})
+
+(test-capability (coin.GAS))
+(test-capability (GAS_PAYER "user" 0 0.0))
+(expect "buy gas succeeds" "Write succeeded" (coin.buy-gas GAS-PAYER-ACCOUNT TOTAL-GAS))
+(commit-tx)
+
+; Everything OK with withdraw-xchain => Should work
+(begin-tx)
+(use free.cyKlone-relay-v0)
+(env-chain-data { "gas-price":  0.00000001, "gas-limit": 34000})
+(env-data { "tx-type": "exec", "exec-code": ["(free.cyKlone-relay-v0.relay-withdraw-xchain \"bob\")" ]})
 
 (test-capability (coin.GAS))
 (test-capability (GAS_PAYER "user" 0 0.0))

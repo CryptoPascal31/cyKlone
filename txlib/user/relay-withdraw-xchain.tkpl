@@ -1,0 +1,21 @@
+code: |-
+  ({{relay-module}}.relay-withdraw-xchain "{{dst-account}}" (read-keyset 'ks) "{{{dst-chain}}}" "{{nullifier-hash}}" "{{root}}" "{{proof}}")
+data:
+  ks:
+    pred: "keys-all"
+    keys:
+      - {{dst-key}}
+  pool: "{{pool}}"
+meta:
+  chainId: "{{chain}}"
+  sender: "{{relay-gas-station-acct}}"
+  gasLimit: 35000
+  gasPrice: 0.00000001
+  ttl: 600
+networkId: "{{network}}"
+signers:
+  - public: "{{tmp-key}}"
+    caps:
+      - name: "{{relay-module}}.GAS_PAYER"
+        args: ["hi", {int: 1}, 1.0]
+type: exec
