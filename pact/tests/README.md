@@ -29,7 +29,8 @@ First work step:    109079
 Inner work step:    108816
 Last work step:     109185
 Standard withdrawal:28794
-Relay withdrawal:   29793
+Relay withdrawal:   29806
+Relay withdrawal X: 29700
 --------------------------------------------------------------------
 
 ```
