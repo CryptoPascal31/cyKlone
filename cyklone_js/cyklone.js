@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 import {MODULE, RELAY_MODULE} from './pact_modules.js'
 import {CyKloneTree} from './cyklone_tree.js';
-import {decode as lz4_dec, encode as lz4_enc} from 'lz4'
+import {ungzip} from "pako"
 import {int_to_b64, hash_dec, encode_proof} from "./codecs.js"
 import {initialize as zok_init} from 'zokrates-js';
 import {validateMnemonic, mnemonicToSeedSync} from 'bip39'
@@ -37,13 +37,12 @@ class CyKlone
     else
     {
       console.log("Loading "+name)
-      return this.resource_loader(name+".lz4")
-             .then(lz4_dec)
-             .then((data) => this.binaries.set(name, Uint8Array.from(data)))
+      return this.resource_loader(name+".gz")
+             .then(ungzip)
+             .then((data) => this.binaries.set(name, data))
              .then((mp) => mp.get(name))
     }
   }
-
 
   get commitment_hasher()
   {

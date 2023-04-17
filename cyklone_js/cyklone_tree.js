@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 import {MODULE} from './pact_modules.js'
-import {decode as lz4_dec, encode as lz4_enc} from 'lz4'
+import {gzip, ungzip} from "pako"
 import {buildPoseidonReference} from "circomlibjs"
 import {MerkleTree} from "fixed-merkle-tree"
 import {b64_to_dec} from "./codecs.js"
@@ -8,6 +8,10 @@ import {b64_to_dec} from "./codecs.js"
 const ZERO = "8355858611563045677440680357889341193906656246723581940305640971585549179022";
 const MAX_DOWNLOAD_LEAF = 100
 
+/* Encoding and Decoding functions */
+const td = new TextDecoder('ascii');
+const to_json = (x) => JSON.parse(td.decode(ungzip(x)))
+const to_bin = (x) =>  gzip(JSON.stringify(x))
 
 class CyKloneTree
 {
@@ -28,7 +32,7 @@ class CyKloneTree
     const hashfn = (l, r) => {return F.toString(poseidon([l,r]),10) }
 
     return this.resource_loader(this.backup_filename)
-           .then((data) => {this.tree = MerkleTree.deserialize(JSON.parse(lz4_dec(data)), hashfn);
+           .then((data) => {this.tree = MerkleTree.deserialize(to_json(data), hashfn);
                             console.log(`Merkle loaded with ${this.tree.elements.length} elements`);},
 
                      () => {this.tree = new MerkleTree(18, [],  {hashFunction:hashfn, zeroElement:ZERO});
@@ -38,7 +42,7 @@ class CyKloneTree
 
   get backup_filename()
   {
-    return `merkle_tree_${this.pool}.json.lz4`;
+    return `merkle_tree_${this.pool}.json.gz`;
   }
 
   get_deposit_chunk(start, end)
@@ -80,7 +84,7 @@ class CyKloneTree
 
   dump()
   {
-    return lz4_enc(JSON.stringify(this.tree.serialize()))
+    return to_bin(this.tree.serialize())
   }
 
 }
