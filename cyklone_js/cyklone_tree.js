@@ -32,7 +32,8 @@ class CyKloneTree
     const hashfn = (l, r) => {return F.toString(poseidon([l,r]),10) }
 
     return this.resource_loader(this.backup_filename)
-           .then((data) => {this.tree = MerkleTree.deserialize(to_json(data), hashfn);
+           .then(to_json)
+           .then((data) => {this.tree = MerkleTree.deserialize(data, hashfn);
                             console.log(`Merkle loaded with ${this.tree.elements.length} elements`);},
 
                      () => {this.tree = new MerkleTree(18, [],  {hashFunction:hashfn, zeroElement:ZERO});
