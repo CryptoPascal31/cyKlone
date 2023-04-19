@@ -2,7 +2,7 @@
 import {MODULE, RELAY_MODULE} from './pact_modules.js'
 import {CyKloneTree} from './cyklone_tree.js';
 import {ungzip} from "pako"
-import {int_to_b64, hash_dec, encode_proof} from "./codecs.js"
+import {int_to_b64, b64_to_dec, hash_dec, encode_proof} from "./codecs.js"
 import {initialize as zok_init} from 'zokrates-js';
 import {validateMnemonic, mnemonicToSeedSync} from 'bip39'
 import {Scalar as S} from 'ffjavascript'
@@ -107,17 +107,32 @@ class CyKlone
                             }))
   }
 
-  deposit_state(commitment)
+  async deposit_state(commitment)
   {
-    return this.kadena_local(`(use ${MODULE})
-                              (bind (get-state "${this.pool}") {'current-rank:=process-rank, 'deposit-queue:=queue}
-                                (bind (get-deposit-data "${commitment}" ) {'rank:=rank, 'pool:=pool}
-                                  (cond
-                                    ((contains (as-int "${commitment}") queue) "In queue")
-                                    ((= rank -1) "Deposit not found")
-                                    ((!= pool "${this.pool}") "Deposit not found in that pool")
-                                    ((> process-rank rank) (format "Completed at rank {}" [rank]))
-                                    "Processing")))`)
+    const _commitment = b64_to_dec(commitment);
+    const pool_state = await this.kadena_local(`(use ${MODULE})
+                                                (get-state "${this.pool}")`);
+    const current_rank = pool_state['current-rank'].int;
+    const deposit_queue = pool_state['deposit-queue'].map((x) => x.int)
+
+    if(deposit_queue.includes(_commitment))
+      return "In queue";
+
+    await this.tree.load();
+
+    for(let i=0;i<2;i++)
+    {
+      const rank = this.tree.tree.indexOf(_commitment);
+      if(rank >= 0)
+      {
+        if(current_rank > rank)
+          return `Completed at rank ${rank}`;
+        else
+          return "Processing";
+      }
+      await this.tree.update();
+    }
+    return "Deposit not found";
   }
 
   async compute_deposit_data(bip39_phrase, password)
