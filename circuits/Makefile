@@ -26,9 +26,9 @@ deploy_module: ${MODULE_FILE}
 
 deploy_client: commitment_hasher.out withdraw.out proving.key
 	mkdir -p ${CLIENT_ZKP_DATA}
-	gzip commitment_hasher.out ${CLIENT_ZKP_DATA}/commitment_hasher.out.gz
-	gzip withdraw.out ${CLIENT_ZKP_DATA}/withdraw.out.gz
-	gzip proving.key ${CLIENT_ZKP_DATA}/proving.key.gz
+	gzip -c commitment_hasher.out > ${CLIENT_ZKP_DATA}/commitment_hasher.out.gz
+	gzip -c withdraw.out > ${CLIENT_ZKP_DATA}/withdraw.out.gz
+	gzip -c proving.key > ${CLIENT_ZKP_DATA}/proving.key.gz
 
 clean:
 	rm -f .pact_zk_state
