@@ -11,7 +11,7 @@
     "@kadena/client": "^0.1.10",
     "bip39": "^3.1.0",
     "chalk": "^5.2.0",
-    "cyklone_js": "file:../cyklone_js",
+    "cyklone_js": "link:../cyklone_js",
     "inquirer": "^9.1.5",
     "yaml": "^2.2.1"
   }

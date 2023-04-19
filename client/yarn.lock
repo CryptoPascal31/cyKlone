@@ -562,17 +562,9 @@ cross-fetch@~3.1.5:
   dependencies:
     node-fetch "2.6.7"
 
-"cyklone_js@file:../cyklone_js":
-  version "0.0.1"
-  dependencies:
-    "@kadena/client" "^0.1.10"
-    "@kadena/cryptography-utils" "^0.1.4"
-    "@kadena/pactjs" "^0.1.4"
-    bip39 "^3.1.0"
-    circomlibjs "^0.1.7"
-    fixed-merkle-tree "https://github.com/tornadocash/fixed-merkle-tree"
-    pako "^2.1.0"
-    zokrates-js "1.1.6"
+"cyklone_js@link:../cyklone_js":
+  version "0.0.0"
+  uid ""
 
 debug@~4.3.4:
   version "4.3.4"
