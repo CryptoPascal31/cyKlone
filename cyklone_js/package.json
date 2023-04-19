@@ -15,6 +15,6 @@
     "circomlibjs": "^0.1.7",
     "fixed-merkle-tree": "https://github.com/tornadocash/fixed-merkle-tree",
     "pako": "^2.1.0",
-    "zokrates-js": "1.1.6"
+    "zokrates-js": "1.1.7"
   }
 }
