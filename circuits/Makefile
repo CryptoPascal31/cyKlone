@@ -1,5 +1,6 @@
 PACT_GEN=pact_zk_gen
 CLIENT_ZKP_DATA=../client/zkp
+GEN_TESTS_ZKP_DATA=../gen_test_vectors/zkp
 CONTRACTS_DIR=../pact/contracts
 MODULE_NAME=cyklone-withdraw-verifier-v0
 
@@ -26,9 +27,15 @@ deploy_module: ${MODULE_FILE}
 
 deploy_client: commitment_hasher.out withdraw.out proving.key
 	mkdir -p ${CLIENT_ZKP_DATA}
+	mkdir -p ${GEN_TESTS_ZKP_DATA}
+
 	gzip -c commitment_hasher.out > ${CLIENT_ZKP_DATA}/commitment_hasher.out.gz
 	gzip -c withdraw.out > ${CLIENT_ZKP_DATA}/withdraw.out.gz
 	gzip -c proving.key > ${CLIENT_ZKP_DATA}/proving.key.gz
+
+	gzip -c commitment_hasher.out > ${GEN_TESTS_ZKP_DATA}/commitment_hasher.out.gz
+	gzip -c withdraw.out > ${GEN_TESTS_ZKP_DATA}/withdraw.out.gz
+	gzip -c proving.key > ${GEN_TESTS_ZKP_DATA}/proving.key.gz
 
 clean:
 	rm -f .pact_zk_state
