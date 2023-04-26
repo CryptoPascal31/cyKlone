@@ -80,8 +80,10 @@
 (expect-that "Deposit count must have been incremented" (compose (at 'deposit-count) (= 1)) (get-state "10KDA"))
 
 ; Process te deposit
+(env-chain-data {'block-height:300})
 (repeat-N-work 6)
 (expect-that "Deposit rank must have been incremented" (compose (at 'current-rank) (= 1)) (get-state "10KDA"))
+(expect-that "last-block-work has been updated" (compose (at 'last-work-block) (= 300)) (get-state "10KDA"))
 
 ; There is no work anymore
 (expect-failure "No work anymore" "work" (work))

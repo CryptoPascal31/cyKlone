@@ -1,5 +1,5 @@
 (module cyKlone-v0-multipool UPGRADE-MODULE
-  (defconst VERSION:string "0.33")
+  (defconst VERSION:string "0.34")
   (defconst MODULE-FREEZE-DATE (time "2023-10-30T00:00:00Z"))
 
   (use free.util-math [xEy])
@@ -60,6 +60,7 @@
     last-known-roots:[integer] ;The last 32 computed roots of the Merkle tree
     merkle-tree-data:object{merkle-data-schema} ;Current state of the merkle tree calculation
     deposit-queue:[integer] ; The queue of deposits but not already inserted into the tree
+    last-work-block:integer; Last block where the (work) was triggered
   )
 
   (defschema nullifier-schema
@@ -177,7 +178,8 @@
          'withdrawal-count:0,
          'last-known-roots:(make-list 32 0),
          'merkle-tree-data: {'subtrees:ZEROS, 'current-level:0, 'current-hash:0},
-         'deposit-queue:[]}))
+         'deposit-queue:[],
+         'last-work-block:0}))
   )
 
 
@@ -259,8 +261,10 @@
              ; In case this is the last iteration, register the found root, and reset calculation
              (data_3 (if (= (at 'current-level data_2) MERKLE-TREE-DEPTH)
                          (register-root pool rank data_2)
-                         data_2)))
-        (update pool-state pool {'merkle-tree-data: data_3})))
+                         data_2))
+            (current-height (at 'block-height (chain-data))))
+        (update pool-state pool {'merkle-tree-data: data_3,
+                                 'last-work-block: current-height })))
   )
 
   (defun work ()
