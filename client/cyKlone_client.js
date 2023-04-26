@@ -106,6 +106,7 @@ function print_pool_data(long_print=false)
                     console.log("Queued deposits: " +chalk.blue(data.queued_deposits));
                     console.log("Current deposit processing: " +chalk.blue(data.deposit_progress));
                     console.log("Total withdrawals: " +chalk.blue(data.withdrawals));
+                    console.log("Last work block: " + chalk.blue(data.last_work))
                   }
                   console.log(chalk.magenta("--------------------------------------------"));})
 }

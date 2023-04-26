@@ -101,6 +101,7 @@ class CyKlone
                             deposit_fees:x['fees'],
                             withdrawals:x['withdrawal-count'].int,
                             total_deposits:x['deposit-count'].int,
+                            last_work:x['last-work-block'].int,
                             processed_deposits:x['current-rank'].int,
                             queued_deposits:x['deposit-queue'].length,
                             deposit_progress: `${x['merkle-tree-data']['current-level'].int/3}/6`
