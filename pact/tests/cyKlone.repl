@@ -224,10 +224,29 @@
 (deposit "alice" DEPOSIT_18)
 (deposit "alice" DEPOSIT_19)
 
-(repeat-N-work (* 16 6))
-
 ; Verify the balance after
 (expect-that "Balance after deposit" (between 799.0 800.0) (coin.get-balance "alice"))
+
+(commit-tx)
+
+(begin-tx)
+(use cyKlone-utils)
+(repeat-N-work (* 4 6))
+(commit-tx)
+
+(begin-tx)
+(use cyKlone-utils)
+(repeat-N-work (* 4 6))
+(commit-tx)
+
+(begin-tx)
+(use cyKlone-utils)
+(repeat-N-work (* 4 6))
+(commit-tx)
+
+(begin-tx)
+(use cyKlone-utils)
+(repeat-N-work (* 4 6))
 (commit-tx)
 
 ; Do some withdrawn
