@@ -91,6 +91,15 @@ class CyKlone
                                  (/ (at 'current-level merkle-data) COMPUTED-LEVELS-PER-ROUND)))`)
   }
 
+  is_work_halted()
+  {
+    return this.kadena_local(`(use ${MODULE})
+                              (bind (get-state "${this.pool}") {'deposit-count:=deps, 'current-rank:=rank, 'last-work-block:=last-work}
+                                (let ((current-block (at 'block-height (chain-data))))
+                                  (and (!= deps rank)
+                                       (> (- current-block last-work) 1))))`)
+  }
+
   pool_data()
   {
       return this.kadena_local(`(use ${MODULE})
