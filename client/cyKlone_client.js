@@ -22,7 +22,7 @@ async function local_check(cmd)
   if(resp.result.status !== 'success')
   {
     console.warn(resp);
-    throw Error(`Error in local call: ${cmd.pact_code}`);
+    throw Error(`Error in local call: ${cmd.code}`);
   }
   return resp.result.data;
 }
