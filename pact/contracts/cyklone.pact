@@ -2,7 +2,7 @@
   (defconst VERSION:string "0.34")
   (defconst MODULE-FREEZE-DATE (time "2023-10-30T00:00:00Z"))
 
-  (use free.util-math [xEy])
+  (use free.util-math [xEy ++ --])
   (use free.util-lists [remove-first append-last first replace-at])
   (use free.util-zk [BN128-GROUP-MODULUS])
   (use free.util-time [is-future])
@@ -40,7 +40,7 @@
 
   ; Total Fees to be transfered for pre-payment to the gas station
   ; = Number of Rounds * Round Cost * Gas Price
-  (defconst FEES:decimal (xEy (* 1.0 (* WORK-ROUNDS WORK-GAS)) -8))
+  (defconst FEES:decimal (xEy (dec (* WORK-ROUNDS WORK-GAS)) -8))
 
   ; -------------------------- DATA AND TABLES ---------------------------------
   ;-----------------------------------------------------------------------------
@@ -136,14 +136,6 @@
                              4975779303672117635891852309998613366642568817212961531521723266758075694506
                              10162988321396705654057952610856417257234322789259805626437123361975652985685
                              15643591565536582692944226866997970792772779983528038950689066322189000603708])
-
-  (defun ++:integer (x:integer)
-    @doc "Increment an integer"
-    (+ 1 x))
-
-  (defun --:integer (x:integer)
-    @doc "Decrement an integer"
-    (- x 1))
 
   (defun as-string:string (x:integer)
     @doc "Convert a base64 string to a 256 bits integer "

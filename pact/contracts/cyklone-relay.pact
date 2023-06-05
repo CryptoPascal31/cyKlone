@@ -18,7 +18,7 @@
 
   (defconst GAS-LIMIT-MAX:integer 35000)
 
-  (defconst TOTAL-GAS:decimal (* GAS-PRICE-MAX GAS-LIMIT-MAX))
+  (defconst TOTAL-GAS:decimal (* GAS-PRICE-MAX (dec GAS-LIMIT-MAX)))
 
   (defconst ALLOWED-WITHDRAW-CREATE:string "(free.cyKlone-relay-v0.relay-withdraw-create")
 
