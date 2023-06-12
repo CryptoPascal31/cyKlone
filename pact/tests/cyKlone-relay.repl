@@ -75,19 +75,21 @@
 (begin-tx)
 (use free.cyKlone-relay-v0)
 (use test-vectors)
-(env-data {'ks:["bob-key"], 'pool:"10KDA"})
-(print (format "Relayer account:{} -> {}" ["bob" (relayer-account "bob")]))
-(print (format "Total GAS: {}" [TOTAL-GAS]))
-(relay-withdraw-xchain "bob" (read-keyset 'ks) "5" WITHDRAW_RELAY_1_1_NULL WITHDRAW_RELAY_1_1_ROOT WITHDRAW_RELAY_1_1_PROOF)
-(expect-that "Balance of gas station" (<= TOTAL-GAS) (coin.get-balance (gas-payer-account)))
+(if XCHAIN-ENABLED
+  (let ((_ 0))
+    (env-data {'ks:["bob-key"], 'pool:"10KDA"})
+    (print (format "Relayer account:{} -> {}" ["bob" (relayer-account "bob")]))
+    (relay-withdraw-xchain "bob" (read-keyset 'ks) "5" WITHDRAW_RELAY_1_1_NULL WITHDRAW_RELAY_1_1_ROOT WITHDRAW_RELAY_1_1_PROOF)
+    (expect-that "Balance of gas station" (<= TOTAL-GAS) (coin.get-balance (gas-payer-account)))
 
-; Check Pact state to confirm that exvrything worked
-(bind (at 'yield (pact-state)) {'amount:=ps_amount, 'receiver:=ps_receiver, 'receiver-guard:=ps_guard}
-  (expect-that "Good amount" (and? (< 9.9) (> 10.0)) ps_amount)
-  (expect "Good receiver" "bob" ps_receiver)
-  (expect "Good receiver guard" (read-keyset 'ks) ps_guard)
+    ; Check Pact state to confirm that exvrything worked
+    (bind (at 'yield (pact-state)) {'amount:=ps_amount, 'receiver:=ps_receiver, 'receiver-guard:=ps_guard}
+      (expect-that "Good amount" (and? (< 9.9) (> 10.0)) ps_amount)
+      (expect "Good receiver" "bob" ps_receiver)
+      (expect "Good receiver guard" (read-keyset 'ks) ps_guard)
+    ))
+  (print "X-chain disabled => Bypass test")
 )
-
 (commit-tx)
 
 
@@ -133,7 +135,7 @@
 (test-capability (coin.GAS))
 (test-capability (GAS_PAYER "user" 0 0.0))
 (expect "buy gas succeeds" "Write succeeded" (coin.buy-gas GAS-PAYER-ACCOUNT TOTAL-GAS))
-(commit-tx)
+(rollback-tx)
 
 ; Everything OK with withdraw-xchain => Should work
 (begin-tx)
@@ -144,4 +146,4 @@
 (test-capability (coin.GAS))
 (test-capability (GAS_PAYER "user" 0 0.0))
 (expect "buy gas succeeds" "Write succeeded" (coin.buy-gas GAS-PAYER-ACCOUNT TOTAL-GAS))
-(commit-tx)
+(rollback-tx)
