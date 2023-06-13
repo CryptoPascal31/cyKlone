@@ -203,6 +203,16 @@ function inquire_for_withdraw()
                           {type:"input", name:"account", message:"Recipient's account:" }])
 }
 
+function inquire_key(x)
+{
+  return inquirer.prompt([{type:"input", name:"account_key", message:"Acccount Key (single 'keys-all'):"}],x)
+}
+
+function inquire_chain(x)
+{
+  return inquirer.prompt([{type:"input", name:"target_chain", message:"Target Chain:" }],x)
+}
+
 function generate_proof()
 {
   return cyKlone.init()
@@ -226,24 +236,22 @@ function create_withdrawal_transaction()
 
 async function create_withdrawal_relayer_transaction()
 {
-  const data = await cyKlone.init()
-                     .then(inquire_for_withdraw)
-                     .then((x) => cyKlone.compute_withdrawal_data_with_relay(x.account, x.mnemonic, x.password))
-
-  await inquirer.prompt({type:"input", name:"account_key", message:"Acccount Key (single 'keys-all'):" })
-                .then((x) => builder.build_withdrawal_with_relay(data.final_acount, x.account_key, data))
+  const in_data =  await cyKlone.init()
+                                .then(inquire_for_withdraw)
+                                .then(inquire_key)
+  return cyKlone.compute_withdrawal_data_with_relay(in_data.account, in_data.mnemonic, in_data.password)
+                .then((data) => builder.build_withdrawal_with_relay(data, in_data.account_key))
                 .then(export_or_send);
 }
 
 async function create_withdrawal_x_chain_relayer_transaction()
 {
-  const data = await cyKlone.init()
-                     .then(inquire_for_withdraw)
-                     .then((x) => cyKlone.compute_withdrawal_data_with_relay(x.account, x.mnemonic, x.password))
-
-  await inquirer.prompt([{type:"input", name:"account_key", message:"Acccount Key (single 'keys-all'):" },
-                         {type:"input", name:"target_chain", message:"Taget Chain:" }])
-                .then((x) => builder.build_withdrawal_with_relay(data.final_acount, x.account_key, data, x.target_chain))
+  const in_data =  await cyKlone.init()
+                                .then(inquire_for_withdraw)
+                                .then(inquire_key)
+                                .then(inquire_chain)
+  return cyKlone.compute_withdrawal_data_with_relay_xchain(in_data.account, in_data.target_chain, in_data.mnemonic, in_data.password)
+                .then((data) => builder.build_withdrawal_with_relay(data, in_data.account_key))
                 .then(export_or_send);
 }
 

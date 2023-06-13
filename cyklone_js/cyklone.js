@@ -234,10 +234,18 @@ class CyKlone
 
   compute_withdrawal_data_with_relay(account, bip39_phrase, password)
   {
-    /* In cas of relaying, we have to use the intermediate account to compute the proof */
+    /* In case of relaying, we have to use the intermediate account to compute the proof */
     return this.relayer_account(account).then((x) => this.compute_withdrawal_data(x, bip39_phrase, password))
-                                        .then((x) => Object.assign(x, {final_acount:account}));
+                                        .then((x) => Object.assign(x, {final_account:account}));
   }
+
+  compute_withdrawal_data_with_relay_xchain(account, chain, bip39_phrase, password)
+  {
+    /* In case of X-chain, concatenate the chain to the final account name */
+    return this.relayer_account(account + chain).then((x) => this.compute_withdrawal_data(x, bip39_phrase, password))
+                                                .then((x) => Object.assign(x, {final_account:account, final_chain:chain}));
+  }
+
 }
 
 /* Utility function to compute the formatted index word expected by the circuit

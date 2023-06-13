@@ -82,7 +82,7 @@ class CyKloneTransactionBuilder
     return cmd;
   }
 
-  async build_withdrawal_with_relay(final_account, final_account_key, withdrawal_data, target_chain=null)
+  async build_withdrawal_with_relay(withdrawal_data, final_account_key)
   {
     const cmd = new PactCommand();
     const {gas_payer, gas_price, gas_limit}  = await this.get_relay_parameters()
@@ -98,17 +98,22 @@ class CyKloneTransactionBuilder
     else
       throw Error("Unsupported key/keyset");
 
+    const target_chain  = withdrawal_data?.final_chain
+
     if(target_chain)
-      cmd.code = `(${RELAY_MODULE}.relay-withdraw-xchain (read-string 'receiver) (read-keyset 'receiver_keyset) "${target_chain}" (read-string 'nullifier) (read-string 'root) (read-string 'proof))`
+      cmd.code = `(${RELAY_MODULE}.relay-withdraw-xchain (read-string 'receiver) (read-keyset 'receiver_keyset) (read-string 'target_chain) (read-string 'nullifier) (read-string 'root) (read-string 'proof))`
     else
       cmd.code = `(${RELAY_MODULE}.relay-withdraw-create (read-string 'receiver) (read-keyset 'receiver_keyset) (read-string 'nullifier) (read-string 'root) (read-string 'proof))`
+
     cmd.setMeta({sender:gas_payer, chainId: this.chain, gasLimit: gas_limit, gasPrice:gas_price}, this.network);
-    cmd.addData({receiver:final_account,
+    cmd.addData({receiver:withdrawal_data.final_account,
                  receiver_keyset:keyset,
                  pool:this.pool,
                  nullifier:withdrawal_data.nullifier_hash,
                  root:withdrawal_data.root,
-                 proof:withdrawal_data.proof })
+                 proof:withdrawal_data.proof,
+                 ...(target_chain && {target_chain:target_chain})
+                })
 
     cmd.addCap(`${RELAY_MODULE}.GAS_PAYER`, tmp_key.publicKey, "", PACT_ZERO.toPactInteger(), PACT_ZERO.toPactDecimal())
 
