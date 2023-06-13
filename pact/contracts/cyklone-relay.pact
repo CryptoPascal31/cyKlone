@@ -1,5 +1,5 @@
 (module cyKlone-relay-v0 GOVERNANCE
-  (defconst VERSION:string "0.24")
+  (defconst VERSION:string "0.25")
   (implements gas-payer-v1)
 
   (use free.util-math [xEy])
@@ -104,11 +104,13 @@
     @doc "User callable function to withdraw from the relay account and make a transfer-create to the final user account"
     (enforce XCHAIN-ENABLED "X-chain withdrawal disabled")
     ; First step => Withdraw to relay
-    (let* ((relayer-act (relayer-account dst-account))
-           (final-amount (--withdraw-to-relayer dst-account nullifier-hash root proof)))
+    ; _dst-account is set to account+chain_id
+    (let* ((_dst-account (+ dst-account target-chain))
+           (relayer-act (relayer-account _dst-account))
+           (final-amount (--withdraw-to-relayer _dst-account nullifier-hash root proof)))
 
       ; Second step => Launch the X-chain transfer
-      (with-capability (RELAY dst-account)
+      (with-capability (RELAY _dst-account)
         (install-capability (coin.TRANSFER_XCHAIN relayer-act dst-account final-amount target-chain))
         (coin.transfer-crosschain relayer-act dst-account dst-guard target-chain final-amount)))
   )

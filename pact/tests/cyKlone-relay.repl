@@ -79,7 +79,17 @@
   (let ((_ 0))
     (env-data {'ks:["bob-key"], 'pool:"10KDA"})
     (print (format "Relayer account:{} -> {}" ["bob" (relayer-account "bob")]))
-    (relay-withdraw-xchain "bob" (read-keyset 'ks) "5" WITHDRAW_RELAY_1_1_NULL WITHDRAW_RELAY_1_1_ROOT WITHDRAW_RELAY_1_1_PROOF)
+    ; Target chain "3" has been fixed in the test vectors generation JS
+    ; => Withdrawing using the non X-chain proof should not work
+    (expect-failure "Bad chain" "Proof does not match"
+                    (relay-withdraw-xchain "bob" (read-keyset 'ks) "3" WITHDRAW_RELAY_1_1_NULL WITHDRAW_RELAY_1_1_ROOT WITHDRAW_RELAY_1_1_PROOF))
+
+    ; => Withdrawing to chain "4" should not work
+    (expect-failure "Bad chain" "Proof does not match"
+                    (relay-withdraw-xchain "bob" (read-keyset 'ks) "4" WITHDRAW_RELAY_XCHAIN_1_1_NULL WITHDRAW_RELAY_XCHAIN_1_1_ROOT WITHDRAW_RELAY_XCHAIN_1_1_PROOF))
+
+    ; => But chain "3" should work
+    (relay-withdraw-xchain "bob" (read-keyset 'ks) "3" WITHDRAW_RELAY_XCHAIN_1_1_NULL WITHDRAW_RELAY_XCHAIN_1_1_ROOT WITHDRAW_RELAY_XCHAIN_1_1_PROOF)
     (expect-that "Balance of gas station" (<= TOTAL-GAS) (coin.get-balance (gas-payer-account)))
 
     ; Check Pact state to confirm that exvrything worked
