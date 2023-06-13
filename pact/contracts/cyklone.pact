@@ -1,5 +1,5 @@
 (module cyKlone-v0-multipool UPGRADE-MODULE
-  (defconst VERSION:string "0.34")
+  (defconst VERSION:string "0.35")
   (defconst MODULE-FREEZE-DATE (time "2023-10-30T00:00:00Z"))
 
   (use free.util-math [xEy ++ --])
@@ -327,7 +327,7 @@
         (enforce (contains i-root known-roots) "Merkle tree root unknown"))
 
       ;Check ZK Proof
-      (enforce (verify i-account-hash [i-nullifier-hash i-root] proof) "ZK Prof does not match")
+      (enforce (verify i-account-hash [i-nullifier-hash i-root] proof) "ZK Proof does not match")
 
       ; Insert the nullifier to prevent future double withdrawal
       (insert nullifiers (as-string i-nullifier-hash) {'withdrawn:true}))
