@@ -24,13 +24,13 @@ Currently the result is:
 --------------------------------------------------------------------
                        BENCHMARKS                                   
 --------------------------------------------------------------------
-Deposit Gas:        1183
-First work step:    109079
-Inner work step:    108816
-Last work step:     109185
-Standard withdrawal:28794
-Relay withdrawal:   29806
-Relay withdrawal X: 29700
+Deposit Gas:        1184
+First work step:    109101
+Inner work step:    108837
+Last work step:     109207
+Standard withdrawal:28810
+Relay withdrawal:   29822
+Relay withdrawal X: 29729
 --------------------------------------------------------------------
 
 ```
