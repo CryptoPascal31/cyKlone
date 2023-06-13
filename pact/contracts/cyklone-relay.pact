@@ -1,5 +1,5 @@
 (module cyKlone-relay-v0 GOVERNANCE
-  (defconst VERSION:string "0.25")
+  (defconst VERSION:string "0.26")
   (implements gas-payer-v1)
 
   (use free.util-math [xEy])
@@ -103,6 +103,11 @@
   (defun relay-withdraw-xchain (dst-account:string dst-guard:guard target-chain:string nullifier-hash:string root:string proof:string)
     @doc "User callable function to withdraw from the relay account and make a transfer-create to the final user account"
     (enforce XCHAIN-ENABLED "X-chain withdrawal disabled")
+    ; Definitively, it too dangerous to allow X-chain withdrawal with non prinicipal account
+    ; There is a risk of f frontrunning and loosing funds.
+    (enforce (validate-principal dst-guard dst-account)
+             "X-chain withdrawals are only allowed for principal accounts")
+
     ; First step => Withdraw to relay
     ; _dst-account is set to account+chain_id
     (let* ((_dst-account (+ dst-account target-chain))

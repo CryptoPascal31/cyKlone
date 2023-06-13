@@ -6,6 +6,7 @@ import {hash} from '@kadena/cryptography-utils'
 const MNEMONIC = "obscure vivid ill elite sister evoke faculty accident slide alter kiwi captain"
 const RELAY_MODULE = "free.cyKlone-relay-v0"
 const MAIN_WITHDRAWER = "bob"
+const XCHAIN_WITHDRAWER = "r:user.bob"
 const XCHAIN_DST = "3"
 const NO_POOL = "";
 
@@ -76,7 +77,7 @@ function gen_pact_proof_relay(deposit_index, tree_size)
 
 function gen_pact_proof_relay_xchain(deposit_index, tree_size)
 {
-  const relayer = compute_cap_guard_principal(MAIN_WITHDRAWER + XCHAIN_DST)
+  const relayer = compute_cap_guard_principal(XCHAIN_WITHDRAWER + XCHAIN_DST)
   console.log(relayer)
   return gen_proof(relayer, deposit_index, tree_size)
          .then( (x) =>[`(defconst WITHDRAW_RELAY_XCHAIN_${deposit_index}_${tree_size}_NULL:string "${x.nullifier_hash}")`,

@@ -41,6 +41,13 @@
 (load "test-vectors.pact")
 (commit-tx)
 
+;Create a keyset to use a keyset-ref as a principal withdrawing account
+(begin-tx)
+(namespace 'user)
+(env-data {'k:["bob-key"]})
+(define-keyset "user.bob" (read-keyset 'k))
+(commit-tx)
+
 (env-gasmodel "table")
 (env-gaslimit 1000000000)
 
@@ -103,7 +110,7 @@
 (use test-vectors)
 (env-data {'ks:["bob-key"], 'pool:"10KDA"})
 (env-gas 0)
-(relay-withdraw-xchain "bob" (read-keyset 'ks) "16" WITHDRAW_RELAY_0_0_NULL WITHDRAW_RELAY_0_0_ROOT WITHDRAW_RELAY_0_0_PROOF)
+(relay-withdraw-xchain "r:user.bob" (keyset-ref-guard "user.bob") "3" WITHDRAW_RELAY_XCHAIN_0_0_NULL WITHDRAW_RELAY_XCHAIN_0_0_ROOT WITHDRAW_RELAY_XCHAIN_0_0_PROOF)
 (print (format "Relay withdrawal X: {}" [(env-gas)]))
 (rollback-tx)
 
