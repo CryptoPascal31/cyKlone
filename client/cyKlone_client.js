@@ -270,6 +270,7 @@ async function main_menu()
   const WITHDRAW ="Withdraw";
   const WITHDRAW_RELAY ="Withdraw with relay";
   const WITHDRAW_RELAY_XCHAIN ="Withdraw with relay X-chain";
+  const DEPLOYED_MODULES_INFOS ="Deployed modules infos"
 
   while(true)
   {
@@ -286,6 +287,7 @@ async function main_menu()
                                                      WITHDRAW,
                                                      WITHDRAW_RELAY,
                                                      WITHDRAW_RELAY_XCHAIN,
+                                                     DEPLOYED_MODULES_INFOS,
                                                      EXIT]}])
     if(answer.menu_item === EXIT)
       break;
@@ -293,6 +295,9 @@ async function main_menu()
     {
       switch(answer.menu_item)
       {
+        case DEPLOYED_MODULES_INFOS:
+          await cyKlone.module_infos().then(console.log);
+          break;
         case SELECT_POOL:
           await set_pool();
           break;
