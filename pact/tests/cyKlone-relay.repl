@@ -39,24 +39,16 @@
 ; Load test vectors and utils in the root namespace
 (begin-tx)
 (load "test-vectors.pact")
-(load "cyklone-utils.pact")
 (commit-tx)
 
 (env-data {'pool:"10KDA"})
 ;;; ----------------------- DEPOSITS ----------------------------------------
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
 (env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 21.0)]}])
 (deposit "alice" DEPOSIT_0)
 (deposit "alice" DEPOSIT_1)
-(commit-tx)
-
-;;; ----------------------- PROCESS 0DEPOSIT -----------------------------------
-(begin-tx)
-(use free.cyKlone-v0-multipool)
-(use cyKlone-utils)
-(repeat-N-work 12)
 (commit-tx)
 
 ;;; ----------------------- WITHDRAWAL WITH RELAY ------------------------------

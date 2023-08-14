@@ -13,9 +13,6 @@ Intensive test of the cyKlone contract. This test could take a lot of RAM (more 
 ### cyKlone-relay.repl
 Test the relay and the associated gas station
 
-### cyKlone-work-gas-station.repl
-Test the work gas station
-
 ## Benchmarks
 The file `benchmarks.repl` does a Gas benchmark of each transaction.
 

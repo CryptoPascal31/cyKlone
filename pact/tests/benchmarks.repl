@@ -51,7 +51,7 @@
 (env-data {'pool:"10KDA"})
 
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
 
 ;Do the deposit
@@ -61,27 +61,10 @@
 (deposit "alice" DEPOSIT_0)
 (print (format "Deposit Gas:        {}" [(env-gas)]))
 
-(env-gas 0)
-(work)
-(print (format "First work step:    {}" [(env-gas)]))
-
-(work)
-
-(env-gas 0)
-(work)
-(print (format "Inner work step:    {}" [(env-gas)]))
-
-(work)
-
-(work)
-
-(env-gas 0)
-(work)
-(print (format "Last work step:     {}" [(env-gas)]))
 (commit-tx)
 
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
 
 (env-gas 0)

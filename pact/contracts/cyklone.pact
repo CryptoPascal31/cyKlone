@@ -1,13 +1,12 @@
-(module cyKlone-v0-multipool UPGRADE-MODULE
-  (defconst VERSION:string "0.34")
+(module cyKlone-v04-multipool UPGRADE-MODULE
+  (defconst VERSION:string "0.35")
   (defconst MODULE-FREEZE-DATE (time "2023-10-30T00:00:00Z"))
 
-  (use free.util-math [xEy])
   (use free.util-lists [remove-first append-last first replace-at])
   (use free.util-zk [BN128-GROUP-MODULUS])
   (use free.util-time [is-future])
 
-  (use free.poseidon-hash-v1 [poseidon-hash])
+  (use free.poseidon-hash-v1-1 [poseidon-hash])
   (use cyklone-withdraw-verifier-v0 [verify])
 
   (defcap UPGRADE-MODULE ()
@@ -26,21 +25,9 @@
   ; Total height of the Merkle tree
   (defconst MERKLE-TREE-DEPTH:integer 18)
 
-  ; Number of levels of the Merkle tree computed per round of work
-  (defconst COMPUTED-LEVELS-PER-ROUND:integer 3)
-
-  ; Number of work rounds needed for complete (ie root) computation
-  (defconst WORK-ROUNDS:integer (/ MERKLE-TREE-DEPTH COMPUTED-LEVELS-PER-ROUND))
-
   ; Maximum number of allowed deposits => After the contract is dead
   (defconst MAXIMUM-DEPOSITS (^ 2 MERKLE-TREE-DEPTH))
 
-  ; The maximum cost of a round of computation
-  (defconst WORK-GAS:integer 120000)
-
-  ; Total Fees to be transfered for pre-payment to the gas station
-  ; = Number of Rounds * Round Cost * Gas Price
-  (defconst FEES:decimal (xEy (* 1.0 (* WORK-ROUNDS WORK-GAS)) -8))
 
   ; -------------------------- DATA AND TABLES ---------------------------------
   ;-----------------------------------------------------------------------------
@@ -55,12 +42,9 @@
     @doc "Global state of the contract => Only one instance is stored"
     deposit-amount:decimal ; Amount to deposit
     deposit-count:integer ;The total of deposit already made (including thoses in queue)
-    current-rank:integer ; The rank of the next deposit. The rank is updated once a deposit has been fully computed
     withdrawal-count:integer ; The total number of withdrawals already made
     last-known-roots:[integer] ;The last 32 computed roots of the Merkle tree
-    merkle-tree-data:object{merkle-data-schema} ;Current state of the merkle tree calculation
-    deposit-queue:[integer] ; The queue of deposits but not already inserted into the tree
-    last-work-block:integer; Last block where the (work) was triggered
+    merkle-subtrees:[integer] ; Merkle tree
   )
 
   (defschema nullifier-schema
@@ -85,6 +69,9 @@
   ;-----------------------------------------------------------------------------
   ; Lock the reserve account
   (defcap RESERVE-SPEND () true)
+
+  ; Lock the process-deposit function
+  (defcap PROCESS-DEPOSIT () true)
 
   ; Prevent internal functions to be called out of the (work) function
   (defcap DO-WORK () true)
@@ -164,6 +151,10 @@
   (defun get-pool:string ()
     (read-string 'pool))
 
+  (defun deposit-amount:decimal ()
+    (with-read pool-state (get-pool) {'deposit-amount:=x}
+      x))
+
   ; -------------------------- ADMINISTRATIVE FUNCTIONS-------------------------
   ;-----------------------------------------------------------------------------
   (defun add-pool (pool:string amount:decimal)
@@ -174,26 +165,16 @@
         {
          'deposit-amount:amount,
          'deposit-count:0,
-         'current-rank:0,
          'withdrawal-count:0,
          'last-known-roots:(make-list 32 0),
-         'merkle-tree-data: {'subtrees:ZEROS, 'current-level:0, 'current-hash:0},
-         'deposit-queue:[],
-         'last-work-block:0}))
+         'merkle-subtrees: (take MERKLE-TREE-DEPTH ZEROS)
+       }))
   )
 
 
   ; -------------------------- WORK FUNCTIONS ----------------------------------
   ;-----------------------------------------------------------------------------
-  (defun has-work:bool (pool:string)
-    @doc "Return True if the contract needs for (work) being called"
-    (with-read pool-state pool {'deposit-queue:=deposit-queue, 'merkle-tree-data:=merkle-state}
-      (or?  (> (length deposit-queue)) ;If there are some stuffs in deposit queue => work is needed
-            (> (at 'current-level merkle-state)) ;If current-level is not null, it means that a deposit is ongoing
-            0))
-  )
-
-  (defun hash-level:object{merkle-data-schema} (rank:integer tree-data:object{merkle-data-schema})
+  (defun hash-level:object{merkle-data-schema} (rank:integer tree-data:object{merkle-data-schema} _:integer)
     @doc "Compute a level of the Merkle tree"
     ; This algorithm is an exact copycat of Tornado Cash
     (bind tree-data {'subtrees:=subtrees, 'current-level:=level, 'current-hash:=previous-hash}
@@ -209,71 +190,31 @@
             'subtrees: (if on-left (replace-at subtrees level previous-hash) subtrees)}))
   )
 
-  (defun hash-multi-level:object{merkle-data-schema} (rank:integer input:object{merkle-data-schema})
-    @doc "Compute three levels of the Merkle tree"
-    (let* ((data  (hash-level rank input))
-           (_data  (hash-level rank data))
-           (__data  (hash-level rank _data)))
-      __data)
-  )
+  (defun --process-deposit:string (pool:string commitment:integer)
+    (require-capability (PROCESS-DEPOSIT))
+    (with-read pool-state pool {'merkle-subtrees:=subtrees, 'deposit-count:=rank, 'last-known-roots:=roots}
+      ; First insert the commitment into the deposit table
+      (insert deposits (as-string commitment)  {'rank:rank,
+                                                'pool:pool})
 
-  (defun deposit-from-queue:object{merkle-data-schema}  (pool:string rank:integer in:object{merkle-data-schema})
-    @doc "Take a deposit from the queue, and insert a leaf in the Merkle tree"
-    (require-capability (DO-WORK))
-    (with-read pool-state pool {'deposit-queue:=deposit-queue}
-      (let  ((new-deposit (first deposit-queue))) ; Get the first item of the deposit queue
-        ; Insert the leaf in the deposits table
-        (insert deposits (as-string new-deposit) {'rank:rank,
-                                                  'pool:pool})
-        ; Remove the item from the deposit queue
-        (update pool-state pool {'deposit-queue: (remove-first deposit-queue)})
-        ; Insert the commitment into the future computation of the tree.
-        (+ {'current-hash:new-deposit} in)))
-  )
+      ; Create the initial merkle tree state object
+      (let* ((state-i {'current-level:0,
+                       'current-hash:commitment,
+                       'subtrees:subtrees})
 
-  (defun register-root:object{merkle-data-schema}  (pool:string rank:integer in:object{merkle-data-schema})
-    @doc "Function to be called when the full Merkle Tree (ie the root) has been computed \
-        \ Store the root in the list of the last known roots"
-    (require-capability (DO-WORK))
-    (with-read pool-state pool {'last-known-roots:=roots}
-      (let* ((new-root (at 'current-hash in))
+             ; Compute the final merkle-tree-object
+             (state-f (fold (hash-level rank) state-i (enumerate 1 MERKLE-TREE-DEPTH)))
+
              ; Take the last roots lists and insert the new computed root, managing the list as a FIFO.
              ; => Remove the first element, and insert the new at the end;
-             (updated-roots (remove-first (append-last roots new-root))))
-        ; Increment the insertion rank (ready for the next leaf), and save the new known roots FIFO
-        (update pool-state pool {'current-rank: (++ rank ), 'last-known-roots:updated-roots})
-        ; Finally reset the Merkle state object, by forcing the current level of calculation to 0.
-        (+ {'current-level:0} in)))
-  )
+             (updated-roots (remove-first (append-last roots (at 'current-hash state-f)))))
 
-  (defun do-step (pool:string)
-    @doc "Do a step of work"
-    (require-capability (DO-WORK))
-    (with-read pool-state pool {'merkle-tree-data:=data_0, 'current-rank:=rank, 'last-known-roots:=roots}
-      ; In case this is the first work iteration, insert a new leaf from the deposit queue
-      (let* ((data_1 (if (= (at 'current-level data_0) 0)
-                         (deposit-from-queue pool rank data_0)
-                         data_0))
-
-             ; Always, hash Three level of the tree
-             (data_2 (hash-multi-level rank data_1))
-
-             ; In case this is the last iteration, register the found root, and reset calculation
-             (data_3 (if (= (at 'current-level data_2) MERKLE-TREE-DEPTH)
-                         (register-root pool rank data_2)
-                         data_2))
-            (current-height (at 'block-height (chain-data))))
-        (update pool-state pool {'merkle-tree-data: data_3,
-                                 'last-work-block: current-height })))
-  )
-
-  (defun work ()
-    @doc "Main public function to be called to trigger work"
-    (let ((x (has-work (get-pool))))
-      (enforce x "There is no work"))
-    (with-capability (DO-WORK)
-      (do-step (get-pool)))
-  )
+        ; Now, update the dabaase with the computed data
+        (update pool-state pool {'deposit-count: (++ rank),
+                                 'last-known-roots:updated-roots,
+                                 'merkle-subtrees: (at 'subtrees state-f)})))
+      "Deposit processed"
+    )
 
 
   ; -------------------------- DEPOSIT FUNCTIONS -------------------------------
@@ -281,33 +222,21 @@
   (defun deposit (src-account:string commitment:string)
     @doc "Public function to be called to do a deposit \
          \ The TRANSFER capability has to be set"
-    (with-read pool-state (get-pool) {'deposit-count:=count,
-                                        'deposit-queue:=queue,
-                                        'deposit-amount:=amount}
-      ; Check that the maximum deposits count hasn't be reached
-      (enforce (< count MAXIMUM-DEPOSITS) "Deposits limit reached")
-      ; Check that the commitment is not already in the deposit queue
-      (enforce (not (contains (as-int commitment) queue)) "Deposit already submitted")
-      ; Check that the deposit hasn't already done
-      (with-default-read deposits commitment {'rank:-1} {'rank:=rank}
-        (enforce (= -1 rank) "Deposit already submitted"))
 
-      ; Transfer the money from the depositor to the main reserve
-      (coin.transfer-create src-account RESERVE RESERVE-GUARD (+ amount FEES))
+    ; Check that the maximum deposits count hasn't be reached
+    (with-read pool-state (get-pool) {'deposit-count:=count}
+      (enforce (< count MAXIMUM-DEPOSITS) "Deposits limit reached"))
 
-      ; Transfer one part to the gas station for future work
-      (with-capability (FUND-GAS-STATION)
-        ; We install more transfer capability than needed, because it allows
-        ; to make several deposits in the same transaction. This is not 100% clean
-        ; However it should be OK as the reseve is protected by the cap guard.
-        (install-capability (coin.TRANSFER RESERVE WORK-GAS-STATION 1.0))
-        (coin.transfer RESERVE WORK-GAS-STATION FEES))
+    ; Check that the deposit hasn't already done
+    (with-default-read deposits commitment {'rank:-1} {'rank:=rank}
+      (enforce (= -1 rank) "Deposit already submitted"))
 
-      ; Update the data
-      (update pool-state (get-pool)
-              {'deposit-count: (++ count), ; Increment the deposit count
-               'deposit-queue: (append-last queue (as-int commitment)) ;Append the deposit into the queue
-              }))
+    ; Transfer the money from the depositor to the main reserve
+    (coin.transfer-create src-account RESERVE RESERVE-GUARD (deposit-amount))
+
+    ; Process the Merkle tree calculation
+    (with-capability (PROCESS-DEPOSIT)
+      (--process-deposit (get-pool) (as-int commitment)))
   )
 
 

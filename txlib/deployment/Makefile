@@ -4,7 +4,7 @@ DATA_FILE=testnet_data.yaml
 KEY_A=../../keys/80c.yaml
 KEY_B=../../keys/e37.yaml
 
-all: cyklone.json cyklone-work-gas-station.json cyklone-relay.json poseidon.json poseidon-constants.json
+all: cyklone.json cyklone-relay.json poseidon.json poseidon-constants.json
 
 .%.pact: %.m4
 	m4 ${MACROS} $< > $@

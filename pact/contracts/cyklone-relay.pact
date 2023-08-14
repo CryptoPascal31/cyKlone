@@ -1,11 +1,11 @@
 (module cyKlone-relay-v0 GOVERNANCE
-  (defconst VERSION:string "0.23")
+  (defconst VERSION:string "0.24")
   (implements gas-payer-v1)
 
   (use free.util-math [xEy])
   (use free.util-strings [starts-with])
   (use free.util-lists [first])
-  (use cyKlone-v0-multipool [withdraw-create] )
+  (use cyKlone-v04-multipool [withdraw-create] )
 
   (defcap GOVERNANCE ()
     (enforce-keyset "free.cyKlone-test-ks"))

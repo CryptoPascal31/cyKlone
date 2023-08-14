@@ -32,7 +32,6 @@
 ; Load test vectors and utils in the root namespace
 (begin-tx)
 (load "test-vectors.pact")
-(load "cyklone-utils.pact")
 (commit-tx)
 
 (env-data {'pool:"10KDA"})
@@ -41,7 +40,7 @@
 ; ------------------------------------------------------------------------------
 ;;; First Alice Deposit
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
 (use free.util-math)
 ; Verify the balance before
@@ -56,28 +55,19 @@
 
 ; Verify the balance after
 (expect-that "Balance after deposit" (between 989.0 990.0) (coin.get-balance "alice"))
+(expect-that "Deposit count must have been incremented" (compose (at 'deposit-count) (= 1)) (get-state "10KDA"))
 (commit-tx)
 
 ; Try to withdraw
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
-(use cyKlone-utils)
 
 ; Verify the balance of Bob before
 (expect "Balance before withdraw" 1000.0 (coin.get-balance "bob"))
-(expect-failure "Must not work => Deposit not processed" "root unknown" (withdraw "bob" WITHDRAW_0_0_NULL WITHDRAW_0_0_ROOT WITHDRAW_0_0_PROOF))
-
-(expect-that "Deposit count must have been incremented" (compose (at 'deposit-count) (= 1)) (get-state "10KDA"))
 
 ; Process te deposit
 (env-chain-data {'block-height:300})
-(repeat-N-work 6)
-(expect-that "Deposit rank must have been incremented" (compose (at 'current-rank) (= 1)) (get-state "10KDA"))
-(expect-that "last-block-work has been updated" (compose (at 'last-work-block) (= 300)) (get-state "10KDA"))
-
-; There is no work anymore
-(expect-failure "No work anymore" "work" (work))
 
 ; And retry to withdraw
 ; But first with a bad proof
@@ -101,7 +91,7 @@
 ; Check another time to deposit the same commitment
 ; Because here the commitment is not in queue anymore but should however fail
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
 (env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 11.0)]}])
 ; Try to deposit 2 times
@@ -114,7 +104,7 @@
 ; ------------------------------------------------------------------------------
 ; Deposits 3 times in a row
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
 (use free.util-math)
 ; Verify the balance before
@@ -127,7 +117,7 @@
 (commit-tx)
 
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
 (use free.util-math)
 ; Verify the balance before
@@ -140,7 +130,7 @@
 (commit-tx)
 
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
 (use free.util-math)
 ; Verify the balance before
@@ -153,43 +143,24 @@
 (commit-tx)
 
 
-; Now Process the deposits
-(begin-tx)
-(use free.cyKlone-v0-multipool)
-(use test-vectors)
-(use cyKlone-utils)
-
-(expect-that "Deposit count must have been incremented to 4" (compose (at 'deposit-count) (= 4)) (get-state "10KDA"))
-; Process te deposit
-(repeat-N-work 18)
-
-(expect-that "Deposit rank must have been incremented" (compose (at 'current-rank) (= 4)) (get-state "10KDA"))
-
-; There is no work anymore
-(expect-failure "No work anymore" "work" (work))
-(commit-tx)
-
 ; And withdraw in various order using various roots
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
-(use cyKlone-utils)
 (withdraw "bob" WITHDRAW_3_3_NULL WITHDRAW_3_3_ROOT WITHDRAW_3_3_PROOF)
 (expect "Balance after withdraw" 1020.0 (coin.get-balance "bob"))
 (commit-tx)
 
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
-(use cyKlone-utils)
 (withdraw "bob" WITHDRAW_2_3_NULL WITHDRAW_2_3_ROOT WITHDRAW_2_3_PROOF)
 (expect "Balance after withdraw" 1030.0 (coin.get-balance "bob"))
 (commit-tx)
 
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
-(use cyKlone-utils)
 (withdraw "bob" WITHDRAW_1_3_NULL WITHDRAW_1_3_ROOT WITHDRAW_1_3_PROOF)
 (expect "Balance after withdraw" 1040.0 (coin.get-balance "bob"))
 (commit-tx)
@@ -200,9 +171,8 @@
 ; ------------------------------------------------------------------------------
 ; Deposits now 16 times in a row
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
-(use cyKlone-utils)
 (use free.util-math)
 ; Verify the balance before
 (expect-that "Balance before deposit" (between 959.0 960.0) (coin.get-balance "alice"))
@@ -211,14 +181,31 @@
 (deposit "alice" DEPOSIT_5)
 (deposit "alice" DEPOSIT_6)
 (deposit "alice" DEPOSIT_7)
+(commit-tx)
+
+(begin-tx)
+(use free.cyKlone-v04-multipool)
+(use test-vectors)
 (deposit "alice" DEPOSIT_8)
 (deposit "alice" DEPOSIT_9)
 (deposit "alice" DEPOSIT_10)
 (deposit "alice" DEPOSIT_11)
+(commit-tx)
+
+
+(begin-tx)
+(use free.cyKlone-v04-multipool)
+(use test-vectors)
 (deposit "alice" DEPOSIT_12)
 (deposit "alice" DEPOSIT_13)
 (deposit "alice" DEPOSIT_14)
 (deposit "alice" DEPOSIT_15)
+(commit-tx)
+
+(begin-tx)
+(use free.cyKlone-v04-multipool)
+(use test-vectors)
+(use free.util-math)
 (deposit "alice" DEPOSIT_16)
 (deposit "alice" DEPOSIT_17)
 (deposit "alice" DEPOSIT_18)
@@ -229,54 +216,29 @@
 
 (commit-tx)
 
-(begin-tx)
-(use cyKlone-utils)
-(repeat-N-work (* 4 6))
-(commit-tx)
-
-(begin-tx)
-(use cyKlone-utils)
-(repeat-N-work (* 4 6))
-(commit-tx)
-
-(begin-tx)
-(use cyKlone-utils)
-(repeat-N-work (* 4 6))
-(commit-tx)
-
-(begin-tx)
-(use cyKlone-utils)
-(repeat-N-work (* 4 6))
-(commit-tx)
-
 ; Do some withdrawn
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
-(use cyKlone-utils)
 (withdraw "bob" WITHDRAW_10_10_NULL WITHDRAW_10_10_ROOT WITHDRAW_10_10_PROOF)
 (expect-that "Balance after withdraw" (< 1049.0) (coin.get-balance "bob"))
 ; We rollback to try to withdraw with another root as well
 (rollback-tx)
 
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
-(use cyKlone-utils)
 (withdraw "bob" WITHDRAW_10_18_NULL WITHDRAW_10_18_ROOT WITHDRAW_10_18_PROOF)
 (expect-that "Balance after withdraw" (< 1049.0) (coin.get-balance "bob"))
 (commit-tx)
 
 
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
-(use cyKlone-utils)
 (withdraw "bob" WITHDRAW_19_19_NULL WITHDRAW_19_19_ROOT WITHDRAW_19_19_PROOF)
 (expect-that "Balance after withdraw" (< 1059.0) (coin.get-balance "bob"))
 (commit-tx)
-
-
 
 ; ------------------------------------------------------------------------------
 ; ------------------------------------------------------------------------------
@@ -284,56 +246,70 @@
 ; Now we are filling several levels of the tree until rank 65 and checks that everything is fine
 ; This test as well the filling of the known-root hist
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
-(use cyKlone-utils)
 (use free.util-math)
 ; Verify the balance before
 (expect-that "Balance before deposit" (between 799.0 800.0) (coin.get-balance "alice"))
-(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 221.0 )]}])
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 40.0 )]}])
 (deposit "alice" DEPOSIT_20)
 (deposit "alice" DEPOSIT_21)
 (deposit "alice" DEPOSIT_22)
 (deposit "alice" DEPOSIT_23)
+(commit-tx)
+
+(begin-tx)
+(use free.cyKlone-v04-multipool)
+(use test-vectors)
+(env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 40.0 )]}])
 (deposit "alice" DEPOSIT_24)
 (deposit "alice" DEPOSIT_25)
 (deposit "alice" DEPOSIT_26)
 (deposit "alice" DEPOSIT_27)
+(commit-tx)
+
+(begin-tx)
+(use free.cyKlone-v04-multipool)
+(use test-vectors)
 (deposit "alice" DEPOSIT_28)
 (deposit "alice" DEPOSIT_29)
-
 (deposit "alice" DEPOSIT_30)
 (deposit "alice" DEPOSIT_31)
+(commit-tx)
+
+(begin-tx)
+(use free.cyKlone-v04-multipool)
+(use test-vectors)
 (deposit "alice" DEPOSIT_32)
 (deposit "alice" DEPOSIT_33)
 (deposit "alice" DEPOSIT_34)
 (deposit "alice" DEPOSIT_35)
+(commit-tx)
+
+(begin-tx)
+(use free.cyKlone-v04-multipool)
+(use test-vectors)
 (deposit "alice" DEPOSIT_36)
 (deposit "alice" DEPOSIT_37)
 (deposit "alice" DEPOSIT_38)
 (deposit "alice" DEPOSIT_39)
-
-(deposit "alice" DEPOSIT_40)
-(deposit "alice" DEPOSIT_41)
-
-(expect-that "Balance after deposit" (between 479.0 580.0) (coin.get-balance "alice"))
-
-(repeat-N-work (* 11 6))
 (commit-tx)
 
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
-(use cyKlone-utils)
-(repeat-N-work (* 11 6))
-(expect-failure "No work anymore" "work" (work))
-(expect-that "Deposit count and rank must have been incremented to 42" (and? (compose (at 'deposit-count) (= 42))
-                                                                             (compose (at 'current-rank) (= 42))) (get-state "10KDA"))
+(use free.util-math)
+(deposit "alice" DEPOSIT_40)
+(deposit "alice" DEPOSIT_41)
+(expect-that "Balance after deposit" (between 479.0 580.0) (coin.get-balance "alice"))
+(expect "Deposit count must have been incremented to 42" 42 (at 'deposit-count (get-state "10KDA")))
 (commit-tx)
+
+
 
 ; Do some withdrawals now
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
 
 ; Withdrawl from an old root shoudn't work
@@ -344,14 +320,14 @@
 (commit-tx)
 
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
 (withdraw "bob" WITHDRAW_40_40_NULL WITHDRAW_40_40_ROOT WITHDRAW_40_40_PROOF)
 (expect-that "Balance after withdraw" (< 1079.0) (coin.get-balance "bob"))
 (commit-tx)
 
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
 (withdraw "bob" WITHDRAW_41_41_NULL WITHDRAW_41_41_ROOT WITHDRAW_41_41_PROOF)
 (expect-that "Balance after withdraw" (< 1089.0) (coin.get-balance "bob"))
@@ -359,7 +335,7 @@
 
 ;;;;;  ---------------------------- LOCAL FUNCTIONS TEST ----------------------
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
 (expect "Deposit rank is OK" {'rank:10, 'pool:"10KDA"} (get-deposit-data DEPOSIT_10))
 (expect "Commitment not deposited => -1" {'rank:-1, 'pool:""} (get-deposit-data DEPOSIT_45))

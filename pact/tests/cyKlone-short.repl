@@ -34,23 +34,13 @@
 (load "test-vectors.pact")
 (commit-tx)
 
-; Load an util module no make n-work
-(begin-tx)
-(module cyKlone-utils G
-  (defcap G() true)
-  (defun repeat-N-work (n:integer)
-    (let ((_work (lambda (_) (free.cyKlone-v0-multipool.work))))
-      (map (_work) (enumerate 1 n))))
-)
-(commit-tx)
-
 (env-data {'pool:"10KDA"})
 ; ------------------------------------------------------------------------------
 ; ------------------------------------------------------------------------------
 ; ------------------------------------------------------------------------------
 ;;; First Alice Deposit
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
 (use free.util-math)
 ; Verify the balance before
@@ -69,26 +59,12 @@
 
 ; Try to withdraw
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
-(use cyKlone-utils)
 
 ; Verify the balance of Bob before
 (expect "Balance before withdraw" 1000.0 (coin.get-balance "bob"))
-(expect-failure "Must not work => Deposit not processed" "root unknown" (withdraw "bob" WITHDRAW_0_0_NULL WITHDRAW_0_0_ROOT WITHDRAW_0_0_PROOF))
-
-(expect-that "Deposit count must have been incremented" (compose (at 'deposit-count) (= 1)) (get-state "10KDA"))
-
-; Process te deposit
-(env-chain-data {'block-height:300})
-(repeat-N-work 6)
-(expect-that "Deposit rank must have been incremented" (compose (at 'current-rank) (= 1)) (get-state "10KDA"))
-(expect-that "last-block-work has been updated" (compose (at 'last-work-block) (= 300)) (get-state "10KDA"))
-
-; There is no work anymore
-(expect-failure "No work anymore" "work" (work))
-
-; And retry to withdraw
+;Try to withdraw
 ; But first with a bad proof
 (expect-failure "Must not work => Bad paramaters" "does not match" (withdraw "bob" WITHDRAW_0_0_NULL WITHDRAW_0_0_ROOT WITHDRAW_0_1_PROOF))
 ; A bad root
@@ -110,7 +86,7 @@
 ; Check another time to deposit the same commitment
 ; Because here the commitment is not in queue anymore but should however fail
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
 (env-sigs [{'key:"alice-key", 'caps:[(coin.TRANSFER "alice" RESERVE 11.0)]}])
 ; Try to deposit 2 times
@@ -119,7 +95,7 @@
 
 ;;;;  ---------------------------- LOCAL FUNCTIONS TEST ----------------------
 (begin-tx)
-(use free.cyKlone-v0-multipool)
+(use free.cyKlone-v04-multipool)
 (use test-vectors)
 (expect "Deposit rank is OK" {'rank:0, 'pool:"10KDA"} (get-deposit-data DEPOSIT_0))
 (expect "Commitment not deposited => -1" {'rank:-1, 'pool:""} (get-deposit-data DEPOSIT_45))
