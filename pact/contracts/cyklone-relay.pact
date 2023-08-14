@@ -1,5 +1,5 @@
 (module cyKlone-relay-v0 GOVERNANCE
-  (defconst VERSION:string "0.24")
+  (defconst VERSION:string "0.26")
   (implements gas-payer-v1)
 
   (use free.util-math [xEy])
@@ -18,11 +18,14 @@
 
   (defconst GAS-LIMIT-MAX:integer 35000)
 
-  (defconst TOTAL-GAS:decimal (* GAS-PRICE-MAX GAS-LIMIT-MAX))
+  (defconst TOTAL-GAS:decimal (* GAS-PRICE-MAX (dec GAS-LIMIT-MAX)))
 
   (defconst ALLOWED-WITHDRAW-CREATE:string "(free.cyKlone-relay-v0.relay-withdraw-create")
 
   (defconst ALLOWED-WITHDRAW-XCHAIN:string "(free.cyKlone-relay-v0.relay-withdraw-xchain")
+
+  (defconst XCHAIN-ENABLED:bool true)
+
 
   (defun gas-payer-account:string()
     GAS-PAYER-ACCOUNT)
@@ -99,12 +102,20 @@
 
   (defun relay-withdraw-xchain (dst-account:string dst-guard:guard target-chain:string nullifier-hash:string root:string proof:string)
     @doc "User callable function to withdraw from the relay account and make a transfer-create to the final user account"
+    (enforce XCHAIN-ENABLED "X-chain withdrawal disabled")
+    ; Definitively, it too dangerous to allow X-chain withdrawal with non prinicipal account
+    ; There is a risk of f frontrunning and loosing funds.
+    (enforce (validate-principal dst-guard dst-account)
+             "X-chain withdrawals are only allowed for principal accounts")
+
     ; First step => Withdraw to relay
-    (let* ((relayer-act (relayer-account dst-account))
-           (final-amount (--withdraw-to-relayer dst-account nullifier-hash root proof)))
+    ; _dst-account is set to account+chain_id
+    (let* ((_dst-account (+ dst-account target-chain))
+           (relayer-act (relayer-account _dst-account))
+           (final-amount (--withdraw-to-relayer _dst-account nullifier-hash root proof)))
 
       ; Second step => Launch the X-chain transfer
-      (with-capability (RELAY dst-account)
+      (with-capability (RELAY _dst-account)
         (install-capability (coin.TRANSFER_XCHAIN relayer-act dst-account final-amount target-chain))
         (coin.transfer-crosschain relayer-act dst-account dst-guard target-chain final-amount)))
   )

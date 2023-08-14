@@ -1,4 +1,4 @@
-(env-data {"disable-marmalade":1})
+(env-data {"disable-marmalade":true})
 (load "../kadena_repl_sandbox/kda-env/init.repl")
 
 ;; Define the governance keyset
@@ -36,6 +36,14 @@
 (init)
 (commit-tx)
 
+;Create a keyset to use a keyset-ref as a principal withdrawing account
+(begin-tx)
+(namespace 'user)
+(env-data {'k:["bob-key"]})
+(define-keyset "user.bob" (read-keyset 'k))
+(commit-tx)
+
+
 ; Load test vectors and utils in the root namespace
 (begin-tx)
 (load "test-vectors.pact")
@@ -67,19 +75,37 @@
 (begin-tx)
 (use free.cyKlone-relay-v0)
 (use test-vectors)
-(env-data {'ks:["bob-key"], 'pool:"10KDA"})
-(print (format "Relayer account:{} -> {}" ["bob" (relayer-account "bob")]))
-(print (format "Total GAS: {}" [TOTAL-GAS]))
-(relay-withdraw-xchain "bob" (read-keyset 'ks) "5" WITHDRAW_RELAY_1_1_NULL WITHDRAW_RELAY_1_1_ROOT WITHDRAW_RELAY_1_1_PROOF)
-(expect-that "Balance of gas station" (<= TOTAL-GAS) (coin.get-balance (gas-payer-account)))
+(if XCHAIN-ENABLED
+  (let ((acc "r:user.bob")
+        (guard (keyset-ref-guard "user.bob")))
+    (env-data {'ks:["bob-key"], 'pool:"10KDA"})
+    (print (format "Relayer account:{} -> {}" ["r:user.bob" (relayer-account "r:user.bob")]))
+    ; Target chain "3" has been fixed in the test vectors generation JS
 
-; Check Pact state to confirm that exvrything worked
-(bind (at 'yield (pact-state)) {'amount:=ps_amount, 'receiver:=ps_receiver, 'receiver-guard:=ps_guard}
-  (expect-that "Good amount" (and? (< 9.9) (> 10.0)) ps_amount)
-  (expect "Good receiver" "bob" ps_receiver)
-  (expect "Good receiver guard" (read-keyset 'ks) ps_guard)
+    ; => Withdrawing using a non principal account should not work
+    (expect-failure "Not a principal account" "principal"
+                    (relay-withdraw-xchain "bob" guard "4" WITHDRAW_RELAY_XCHAIN_1_1_NULL WITHDRAW_RELAY_XCHAIN_1_1_ROOT WITHDRAW_RELAY_XCHAIN_1_1_PROOF))
+
+    ; => Withdrawing using the non X-chain proof should not work
+    (expect-failure "Bad chain" "Proof does not match"
+                    (relay-withdraw-xchain acc guard "3" WITHDRAW_RELAY_1_1_NULL WITHDRAW_RELAY_1_1_ROOT WITHDRAW_RELAY_1_1_PROOF))
+
+    ; => Withdrawing to chain "4" should not work
+    (expect-failure "Bad chain" "Proof does not match"
+                    (relay-withdraw-xchain acc guard "4" WITHDRAW_RELAY_XCHAIN_1_1_NULL WITHDRAW_RELAY_XCHAIN_1_1_ROOT WITHDRAW_RELAY_XCHAIN_1_1_PROOF))
+
+    ; => But chain "3" should work
+    (relay-withdraw-xchain acc guard "3" WITHDRAW_RELAY_XCHAIN_1_1_NULL WITHDRAW_RELAY_XCHAIN_1_1_ROOT WITHDRAW_RELAY_XCHAIN_1_1_PROOF)
+    (expect-that "Balance of gas station" (<= TOTAL-GAS) (coin.get-balance (gas-payer-account)))
+
+    ; Check Pact state to confirm that exvrything worked
+    (bind (at 'yield (pact-state)) {'amount:=ps_amount, 'receiver:=ps_receiver, 'receiver-guard:=ps_guard}
+      (expect-that "Good amount" (and? (< 9.9) (> 10.0)) ps_amount)
+      (expect "Good receiver" "r:user.bob" ps_receiver)
+      (expect "Good receiver guard" (keyset-ref-guard "user.bob") ps_guard)
+    ))
+  (print "X-chain disabled => Bypass test")
 )
-
 (commit-tx)
 
 
@@ -125,7 +151,7 @@
 (test-capability (coin.GAS))
 (test-capability (GAS_PAYER "user" 0 0.0))
 (expect "buy gas succeeds" "Write succeeded" (coin.buy-gas GAS-PAYER-ACCOUNT TOTAL-GAS))
-(commit-tx)
+(rollback-tx)
 
 ; Everything OK with withdraw-xchain => Should work
 (begin-tx)
@@ -136,4 +162,4 @@
 (test-capability (coin.GAS))
 (test-capability (GAS_PAYER "user" 0 0.0))
 (expect "buy gas succeeds" "Write succeeded" (coin.buy-gas GAS-PAYER-ACCOUNT TOTAL-GAS))
-(commit-tx)
+(rollback-tx)

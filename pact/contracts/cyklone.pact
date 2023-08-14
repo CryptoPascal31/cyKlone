@@ -124,14 +124,6 @@
                              10162988321396705654057952610856417257234322789259805626437123361975652985685
                              15643591565536582692944226866997970792772779983528038950689066322189000603708])
 
-  (defun ++:integer (x:integer)
-    @doc "Increment an integer"
-    (+ 1 x))
-
-  (defun --:integer (x:integer)
-    @doc "Decrement an integer"
-    (- x 1))
-
   (defun as-string:string (x:integer)
     @doc "Convert a base64 string to a 256 bits integer "
     (int-to-str 64 x))
@@ -264,7 +256,7 @@
         (enforce (contains i-root known-roots) "Merkle tree root unknown"))
 
       ;Check ZK Proof
-      (enforce (verify i-account-hash [i-nullifier-hash i-root] proof) "ZK Prof does not match")
+      (enforce (verify i-account-hash [i-nullifier-hash i-root] proof) "ZK Proof does not match")
 
       ; Insert the nullifier to prevent future double withdrawal
       (insert nullifiers (as-string i-nullifier-hash) {'withdrawn:true}))

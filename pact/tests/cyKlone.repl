@@ -1,4 +1,4 @@
-(env-data {"disable-marmalade":1})
+(env-data {"disable-marmalade":true})
 (load "../kadena_repl_sandbox/kda-env/init.repl")
 
 ;; Define the governance keyset

@@ -1,5 +1,7 @@
 PACT=pact
-OUT_FILTER=grep -v Warning
+
+#OUT_FILTER= | grep -v Warning
+OUT_FILTER =
 
 all: tests benchmarks
 
@@ -9,4 +11,4 @@ tests:
 	${PACT} cyKlone-relay.repl | ${OUT_FILTER}
 
 benchmarks:
-	${PACT} benchmarks.repl | ${OUT_FILTER}
+	${PACT} benchmarks.repl ${OUT_FILTER}

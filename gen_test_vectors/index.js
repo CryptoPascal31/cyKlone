@@ -6,6 +6,8 @@ import {hash} from '@kadena/cryptography-utils'
 const MNEMONIC = "obscure vivid ill elite sister evoke faculty accident slide alter kiwi captain"
 const RELAY_MODULE = "free.cyKlone-relay-v0"
 const MAIN_WITHDRAWER = "bob"
+const XCHAIN_WITHDRAWER = "r:user.bob"
+const XCHAIN_DST = "3"
 const NO_POOL = "";
 
 const compute_cap_guard_principal = (account) => "c:" + hash(`${RELAY_MODULE}.RELAY"${account}"`)
@@ -73,6 +75,16 @@ function gen_pact_proof_relay(deposit_index, tree_size)
                         `(defconst WITHDRAW_RELAY_${deposit_index}_${tree_size}_PROOF:string "${x.proof}")`])
 }
 
+function gen_pact_proof_relay_xchain(deposit_index, tree_size)
+{
+  const relayer = compute_cap_guard_principal(XCHAIN_WITHDRAWER + XCHAIN_DST)
+  console.log(relayer)
+  return gen_proof(relayer, deposit_index, tree_size)
+         .then( (x) =>[`(defconst WITHDRAW_RELAY_XCHAIN_${deposit_index}_${tree_size}_NULL:string "${x.nullifier_hash}")`,
+                        `(defconst WITHDRAW_RELAY_XCHAIN_${deposit_index}_${tree_size}_ROOT:string "${x.root}")`,
+                        `(defconst WITHDRAW_RELAY_XCHAIN_${deposit_index}_${tree_size}_PROOF:string "${x.proof}")`])
+}
+
 async function main()
 {
   await cyKlone.init()
@@ -100,6 +112,8 @@ async function main()
   const pact_withd_relay_list = [
     ...(await gen_pact_proof_relay(0,0)),
     ...(await gen_pact_proof_relay(1,1)),
+    ...(await gen_pact_proof_relay_xchain(0,0)),
+    ...(await gen_pact_proof_relay_xchain(1,1)),
   ]
 
   const pact_code = `

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-import {MODULE, RELAY_MODULE} from './pact_modules.js'
+import {MODULE, RELAY_MODULE, POSEIDON_MODULE, VERIFIER_MODULE, WORK_GAS_STATION, ALL_MODULES} from './pact_modules.js'
 import {CyKloneTree} from './cyklone_tree.js';
 import {ungzip} from "pako"
 import {int_to_b64, b64_to_dec, hash_dec, encode_proof} from "./codecs.js"
@@ -29,6 +29,25 @@ class CyKlone
     console.log("Initializing Zokrates...");
     return zok_init().then((x) => {this.zokrates = x;});
   }
+
+  module_infos()
+  {
+
+    return this.kadena_local(`(zip (lambda (h v) {'hash:h, 'version:v})
+                                   (map (compose (describe-module) (at 'hash))
+                                           ["${POSEIDON_MODULE}",
+                                            "${VERIFIER_MODULE}",
+                                            "${MODULE}",
+                                            "${WORK_GAS_STATION}",
+                                            "${RELAY_MODULE}"])
+                                   [${POSEIDON_MODULE}.VERSION,
+                                    "Unknown",
+                                    ${MODULE}.VERSION,
+                                    ${WORK_GAS_STATION}.VERSION,
+                                    ${RELAY_MODULE}.VERSION])`)
+                .then((data) => ALL_MODULES.reduce( (o, k, i) => Object.assign(o,{[k]:data[i]}), {}))
+  }
+
 
   load_binary(name)
   {
@@ -234,10 +253,18 @@ class CyKlone
 
   compute_withdrawal_data_with_relay(account, bip39_phrase, password)
   {
-    /* In cas of relaying, we have to use the intermediate account to compute the proof */
+    /* In case of relaying, we have to use the intermediate account to compute the proof */
     return this.relayer_account(account).then((x) => this.compute_withdrawal_data(x, bip39_phrase, password))
-                                        .then((x) => Object.assign(x, {final_acount:account}));
+                                        .then((x) => Object.assign(x, {final_account:account}));
   }
+
+  compute_withdrawal_data_with_relay_xchain(account, chain, bip39_phrase, password)
+  {
+    /* In case of X-chain, concatenate the chain to the final account name */
+    return this.relayer_account(account + chain).then((x) => this.compute_withdrawal_data(x, bip39_phrase, password))
+                                                .then((x) => Object.assign(x, {final_account:account, final_chain:chain}));
+  }
+
 }
 
 /* Utility function to compute the formatted index word expected by the circuit
